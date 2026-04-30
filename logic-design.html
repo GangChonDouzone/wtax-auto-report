@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>원천징수이행상황신고서 + 지방소득세 통합 DB 설계</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;font-size:13px;color:#222;background:#f0f2f5;}
+.topbar{background:#1a6fc4;color:#fff;padding:8px 20px;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:space-between;}
+.topbar-right{font-size:11px;opacity:.8;}
+.banner{background:#fff;border-bottom:2px solid #1a6fc4;padding:12px 20px;display:flex;align-items:center;gap:16px;}
+.banner-title{font-size:16px;font-weight:700;color:#1a6fc4;}
+.banner-sub{font-size:12px;color:#888;margin-top:2px;}
+.tab-bar{background:#fff;border-bottom:1px solid #dde3ec;padding:0 20px;display:flex;gap:0;}
+.tab{padding:10px 20px;font-size:12px;font-weight:500;color:#888;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;}
+.tab.active{color:#1a6fc4;border-bottom-color:#1a6fc4;font-weight:700;}
+.tab:hover:not(.active){color:#444;background:#f7f9fc;}
+.section{display:none;padding:16px 20px 32px;}
+.section.active{display:block;}
+.sec-title{font-size:15px;font-weight:700;color:#1a6fc4;margin-bottom:4px;padding-bottom:8px;border-bottom:2px solid #e8ecf4;}
+.sec-desc{font-size:12px;color:#666;margin-bottom:16px;line-height:1.7;}
+.subsec{margin-bottom:24px;}
+.sub-title{font-size:13px;font-weight:700;color:#333;margin-bottom:8px;padding:6px 10px;background:#f0f4ff;border-left:3px solid #1a6fc4;border-radius:0 4px 4px 0;}
+.sub-title2{font-size:12px;font-weight:600;color:#555;margin:14px 0 6px;padding-left:2px;}
+.tw{border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;background:#fff;margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:#f7f9fc;}
+th{padding:7px 10px;text-align:left;font-weight:600;color:#444;border-bottom:1px solid #dde3ec;border-right:1px solid #eee;font-size:11px;white-space:nowrap;}
+th:last-child{border-right:none;}
+td{padding:6px 10px;border-bottom:1px solid #eee;border-right:1px solid #eee;vertical-align:top;font-size:12px;}
+td:last-child{border-right:none;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#fafbfe;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b-red{background:#fce4ec;color:#c62828;}
+.b-org{background:#fff3e0;color:#bf360c;}
+.b-blue{background:#e3f2fd;color:#1565c0;}
+.b-grn{background:#e8f5e9;color:#2e7d32;}
+.b-pur{background:#f3e5f5;color:#7b1fa2;}
+.b-gray{background:#f5f5f5;color:#666;}
+.b-teal{background:#e0f2f1;color:#004d40;}
+.b-ai{background:#ede7f6;color:#4527a0;}
+.b-pk{background:#fce4ec;color:#880e4f;}
+.b-fk{background:#e8f5e9;color:#1b5e20;}
+.b-idx{background:#fff8e1;color:#e65100;}
+.code{font-family:'Consolas','Courier New',monospace;font-size:11px;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:4px;padding:1px 5px;color:#c7254e;}
+pre{background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;font-size:12px;font-family:'Consolas','Courier New',monospace;overflow-x:auto;line-height:1.7;margin-bottom:12px;}
+pre .kw{color:#cba6f7;}
+pre .cm{color:#6c7086;font-style:italic;}
+pre .str{color:#a6e3a1;}
+pre .fn{color:#89dceb;}
+pre .nm{color:#f9e2af;}
+pre .op{color:#89b4fa;}
+.erd-wrap{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;}
+.erd-entity{border:2px solid #1a6fc4;border-radius:8px;background:#fff;min-width:220px;flex:1;}
+.erd-head{background:#1a6fc4;color:#fff;padding:7px 12px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-radius:6px 6px 0 0;}
+.erd-head-sub{font-size:10px;opacity:.8;font-weight:400;}
+.erd-body{padding:6px 0;}
+.erd-row{padding:3px 12px;font-size:11px;display:flex;align-items:center;gap:6px;border-bottom:1px solid #f0f0f0;}
+.erd-row:last-child{border-bottom:none;}
+.erd-pk{color:#c0392b;font-weight:700;font-size:10px;min-width:22px;}
+.erd-fk{color:#2980b9;font-weight:700;font-size:10px;min-width:22px;}
+.erd-sp{min-width:22px;}
+.erd-fname{font-family:'Consolas',monospace;font-size:11px;flex:1;color:#333;}
+.erd-ftype{font-size:10px;color:#888;white-space:nowrap;}
+.erd-fcomment{font-size:10px;color:#aaa;}
+.rel-diagram{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:16px;margin-bottom:12px;}
+.rel-title{font-size:12px;font-weight:700;color:#1a6fc4;margin-bottom:12px;}
+.rel-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.rel-from{background:#e3f2fd;color:#1565c0;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;font-family:monospace;}
+.rel-to{background:#f3e5f5;color:#6a1b9a;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;font-family:monospace;}
+.rel-arrow{font-size:16px;color:#888;}
+.rel-card{font-size:11px;color:#888;background:#f5f5f5;padding:2px 8px;border-radius:20px;}
+.rel-via{font-size:11px;color:#999;font-style:italic;}
+.info-box{background:#e8f4fd;border:1px solid #b3d8f0;border-radius:8px;padding:12px 16px;margin-bottom:16px;}
+.info-box p{font-size:12px;color:#1565c0;line-height:1.7;}
+.warn-box{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:12px 16px;margin-bottom:16px;}
+.warn-box p{font-size:12px;color:#e65100;line-height:1.7;}
+.step-flow{display:flex;gap:0;margin-bottom:16px;flex-wrap:wrap;}
+.step-box{background:#fff;border:1px solid #1a6fc4;border-radius:8px;padding:10px 14px;flex:1;min-width:160px;position:relative;}
+.step-box:not(:last-child)::after{content:'→';position:absolute;right:-16px;top:50%;transform:translateY(-50%);color:#1a6fc4;font-size:18px;font-weight:700;z-index:1;}
+.step-num{font-size:10px;font-weight:700;color:#1a6fc4;margin-bottom:4px;}
+.step-ttl{font-size:12px;font-weight:700;color:#333;margin-bottom:3px;}
+.step-desc{font-size:11px;color:#666;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span>인사TAXCell · AI 원천세 자동 신고 통합 서비스</span>
+  <span class="topbar-right">원천징수 + 지방소득세 통합 DB 설계서 · 2026.04</span>
+</div>
+<div class="banner">
+  <div>
+    <div class="banner-title">📋 원천징수이행상황신고서 + 지방소득세특별징수명세서 — 통합 DB 설계</div>
+    <div class="banner-sub">테이블 명세 ↔ AI 위험분석 비교 매핑 포함 | 원천징수 17개 + 지방소득세 3개 + AI 신규 2개 = 총 22개 테이블</div>
+  </div>
+</div>
+<div class="tab-bar">
+  <div class="tab active" onclick="showTab('compare')">📊 비교 매핑</div>
+  <div class="tab" onclick="showTab('logical')">🔗 논리설계 (ERD)</div>
+  <div class="tab" onclick="showTab('physical')">🗄️ 물리설계 (DDL)</div>
+  <div class="tab" onclick="showTab('ltax')">🏙️ 지방소득세 설계</div>
+  <div class="tab" onclick="showTab('ai')">🤖 AI 위험분석 테이블</div>
+</div>
+
+<!-- ===== TAB 1: 비교 매핑 ===== -->
+<div id="tab-compare" class="section active">
+  <div class="sec-title">📊 AI 위험분석 항목 ↔ 테이블 명세 비교 매핑</div>
+  <p class="sec-desc">원천징수이행상황신고서 AI 위험분석 19개 항목을 기존 테이블 명세와 1:1 매핑합니다.<br>
+  <strong>비교 목적:</strong> ① 위험항목 탐지에 필요한 테이블/필드 존재여부 확인 &nbsp;② 누락 필드 식별 &nbsp;③ AI 결과 저장 신규 테이블 설계 기준 도출</p>
+  <div class="info-box"><p>
+    📌 <strong>비교 방법론</strong><br><br>
+    STEP 1. 위험항목별 점검기준(Check Logic)에서 필요 데이터 항목 추출<br>
+    STEP 2. 추출된 항목을 기존 테이블 명세 컬럼과 매핑 (필드명·의미 기준)<br>
+    STEP 3. 결과 → <span class="badge b-grn">✔ 충족</span> / <span class="badge b-org">△ 부분충족</span> / <span class="badge b-red">✘ 신규필요</span> 판정<br>
+    STEP 4. 신규 필요 항목 → AI_WITHREP_RISK_RULE / AI_WITHREP_RISK_RST 테이블로 흡수
+  </p></div>
+  <div class="step-flow">
+    <div class="step-box"><div class="step-num">STEP 1</div><div class="step-ttl">위험항목 분해</div><div class="step-desc">19개 항목에서 점검기준·비교값·임계치 추출</div></div>
+    <div class="step-box"><div class="step-num">STEP 2</div><div class="step-ttl">테이블 매핑</div><div class="step-desc">필요 데이터를 기존 17개 테이블 컬럼과 매핑</div></div>
+    <div class="step-box"><div class="step-num">STEP 3</div><div class="step-ttl">갭 분석</div><div class="step-desc">충족/부분충족/신규필요 판정 및 누락항목 식별</div></div>
+    <div class="step-box"><div class="step-num">STEP 4</div><div class="step-ttl">AI 테이블 설계</div><div class="step-desc">신규 AI 결과 테이블로 갭 항목 흡수 설계</div></div>
+  </div>
+  <div class="subsec">
+    <div class="sub-title">비교 매핑 전체 테이블 (19개 위험항목)</div>
+    <div class="tw"><table>
+      <thead><tr>
+        <th style="width:80px">구분</th><th style="width:150px">위험항목명</th>
+        <th>점검기준 (Logic)</th><th style="width:155px">참조 테이블</th>
+        <th style="width:175px">참조 필드</th><th style="width:70px">충족</th><th>갭/비고</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-red">과소신고</span></td><td>소득세액 급감</td><td>지급총액 전월대비 10% 이내, 소득세액 30% 이상 감소</td><td><span class="code">HR_WITHREP_DTL</span><br><span class="code">HR_WITHREP_MST</span></td><td><span class="code">PAY_TOT_AMT</span><br><span class="code">INTAX_AMT</span><br><span class="code">LSMTH_DOC_NO</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>LSMTH_DOC_NO로 전월 문서 조회 후 비율 계산</td></tr>
+        <tr><td><span class="badge b-red">과소신고</span></td><td>신규입사자 급여 누락</td><td>신규입사자 수 × 평균급여 대비 총지급액 증가분 50% 미만</td><td><span class="code">SEMP</span><br><span class="code">HR_WITHREP_DTL</span></td><td><span class="code">JOIN_DT</span><br><span class="code">PAY_TOT_AMT</span><br><span class="code">NOPL_CNT</span></td><td><span class="badge b-org">△ 부분</span></td><td>신규입사자 평균급여는 급여상세 테이블(급여모듈) 별도 참조 필요</td></tr>
+        <tr><td><span class="badge b-org">데이터누락</span></td><td>급여자료 집계 불일치</td><td>신고서 총지급액/소득세 ≠ 급여자료 합계</td><td><span class="code">HR_WITHREP_DTL</span><br><span class="code">급여집계*</span></td><td><span class="code">PAY_TOT_AMT</span><br><span class="code">INTAX_AMT</span></td><td><span class="badge b-org">△ 부분</span></td><td>급여자료 합계는 급여모듈 별도 테이블 참조 필요</td></tr>
+        <tr><td><span class="badge b-org">데이터누락</span></td><td>신고서 생성 후 급여 변경</td><td>신고서 집계일시 &lt; 급여 최종 수정일시</td><td><span class="code">HR_WITHREP_MST</span><br><span class="code">급여*</span></td><td><span class="code">INSERT_DT</span><br><span class="code">급여.MODIFY_DT*</span></td><td><span class="badge b-org">△ 부분</span></td><td>급여 MODIFY_DT는 급여모듈 테이블 참조. INSERT_DT 활용</td></tr>
+        <tr><td><span class="badge b-org">데이터누락</span></td><td>차월지급 제외 가능성</td><td>차월지급 처리 급여자료 존재 + 당월 신고 집계 제외</td><td><span class="code">급여테이블*</span></td><td><span class="code">PAY_FG*(차월지급구분)</span></td><td><span class="badge b-red">✘ 신규</span></td><td>차월지급 플래그는 급여모듈 테이블에만 존재. AI_RISK_RST에 탐지결과 저장</td></tr>
+        <tr><td><span class="badge b-org">데이터누락</span></td><td>마이그레이션 데이터 미집계</td><td>이관 데이터 존재 + 신고 집계 미반영</td><td><span class="code">HR_WITHREP_DTL</span></td><td><span class="code">DATA_FG</span></td><td><span class="badge b-org">△ 부분</span></td><td>HR_TAX_DOCU_INFO.DATA_FG 활용. 이관데이터 별도 참조 필요</td></tr>
+        <tr><td><span class="badge b-org">데이터누락</span></td><td>일부 사업장 누락</td><td>급여자료 존재 사업장 중 신고사업장 미설정</td><td><span class="code">HR_CONFIG_MST</span><br><span class="code">SEMP</span></td><td><span class="code">DIV_CD</span><br><span class="code">MENU_CD</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>HR_CONFIG_MST 신고사업장 vs SEMP.DIV_CD 비교</td></tr>
+        <tr><td><span class="badge b-org">데이터누락</span></td><td>반복 지급항목 누락</td><td>최근 3개월 연속 신고 PAY_CD가 당월 0건</td><td><span class="code">HR_WITHREP_DTL</span></td><td><span class="code">SRC_LEV_FG_CD</span><br><span class="code">PAY_TOT_AMT</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>LSMTH_DOC_NO 체인으로 3개월 이력 조회 후 SRC_LEV_FG_CD 기준 비교</td></tr>
+        <tr><td><span class="badge b-org">데이터누락</span></td><td>반복 신고코드 누락</td><td>최근 3개월 이상 반복 신고 후 당월 금액 0원</td><td><span class="code">HR_WITHREP_DTL</span><br><span class="code">HR_WITHREPCODE_INFO</span></td><td><span class="code">SRC_LEV_FG_CD</span><br><span class="code">DECL_CD</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>HR_WITHREPCODE_INFO.DECL_CD와 DTL 조인으로 반복코드 탐지</td></tr>
+        <tr><td><span class="badge b-pur">데이터중복</span></td><td>동일 주민번호 중복</td><td>주민등록번호 동일, 사원코드 상이</td><td><span class="code">SEMP</span><br><span class="code">HR_EARNER_MST</span></td><td><span class="code">RSRG_NO</span><br><span class="code">RES_NO</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>SEMP.RSRG_NO, HR_EARNER_MST.RES_NO GROUP BY → COUNT&gt;1 탐지</td></tr>
+        <tr><td><span class="badge b-pur">데이터중복</span></td><td>동일 금액 연속 지급</td><td>같은 사원에게 동일한 금액으로 연속 지급</td><td><span class="code">HR_WITHREP_DTL</span><br><span class="code">급여상세*</span></td><td><span class="code">PAY_TOT_AMT</span></td><td><span class="badge b-org">△ 부분</span></td><td>사원별 금액 비교는 급여상세 테이블 필요. 집계레벨에서는 제한적</td></tr>
+        <tr><td><span class="badge b-teal">환급세액</span></td><td>전월 이월환급세액 불일치</td><td>전월 차월이월환급세액 ≠ 당월 전월미환급세액</td><td><span class="code">HR_WITHREP_MST</span></td><td><span class="code">NEMOX_REFUTX_AMT</span><br><span class="code">LMNREF_TAX_AMT</span><br><span class="code">LSMTH_DOC_NO</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>LSMTH_DOC_NO → 전월 NEMOX vs 당월 LMNREF 직접 비교</td></tr>
+        <tr><td><span class="badge b-blue">연말정산</span></td><td>중도퇴사자 반영 불명확</td><td>마지막급여일자 ≠ 퇴사일자</td><td><span class="code">SEMP</span><br><span class="code">HR_YREND_MST</span></td><td><span class="code">RPMC_DT</span><br><span class="code">RTR_DT</span><br><span class="code">STL_YM</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>SEMP.RPMC_DT vs HR_YREND_MST 연말정산 존재여부 비교</td></tr>
+        <tr><td><span class="badge b-blue">연말정산</span></td><td>연말정산 총지급액 불일치</td><td>연말정산 총지급액 결과금액 ≠ A04.총지급액</td><td><span class="code">HR_TAX_YREND_INFO</span><br><span class="code">HR_WITHREP_DTL</span></td><td><span class="code">PAY_TOT_AMT</span><br><span class="code">SRC_LEV_FG_CD='A04'</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>HR_TAX_YREND_INFO.PAY_TOT_AMT vs HR_WITHREP_DTL(A04) 비교</td></tr>
+        <tr><td><span class="badge b-blue">연말정산</span></td><td>차감징수세액 불일치</td><td>연말정산 차감징수세액 ≠ A06.납부금액</td><td><span class="code">HR_TAX_YREND_INFO</span><br><span class="code">HR_WITHREP_DTL</span></td><td><span class="code">INTAX_AMT</span><br><span class="code">PYM_INTAX_AMT</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>HR_TAX_YREND_INFO.INTAX_AMT vs HR_WITHREP_DTL(A06).PYM_INTAX_AMT</td></tr>
+        <tr><td><span class="badge b-blue">연말정산</span></td><td>지급조서 연계 금액 불일치</td><td>지급조서 총지급액 ≠ A06.납부금액</td><td><span class="code">HR_TAX_YREND_INFO</span><br><span class="code">지급조서*</span></td><td><span class="code">INTL_KEY_NO</span></td><td><span class="badge b-red">✘ 신규</span></td><td>지급조서 테이블 별도 참조 필요. INTL_KEY_NO 연계키 활용</td></tr>
+        <tr><td><span class="badge b-blue">연말정산</span></td><td>신고서 생성 후 연말정산 변경</td><td>신고서 집계일시 &lt; 연말정산 최종 수정일시</td><td><span class="code">HR_WITHREP_MST</span><br><span class="code">HR_YREND_MST</span></td><td><span class="code">INSERT_DT</span><br><span class="code">MODIFY_DT</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>HR_WITHREP_MST.INSERT_DT vs HR_YREND_MST.MODIFY_DT 직접 비교</td></tr>
+        <tr><td><span class="badge b-blue">연말정산</span></td><td>분납금액 미반영</td><td>A06에 금액 없음 + A06 지급회차 &lt; 3</td><td><span class="code">HR_TAX_YREND_INFO</span></td><td><span class="code">PRM_PINCOMTAX_AMT</span><br><span class="code">SCDR_PINCOMTAX_AMT</span><br><span class="code">THRD_PINCOMTAX_AMT</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>INSPY_REQ_YN='Y'인 경우 1~3차 납부금액 컬럼 비교</td></tr>
+        <tr><td><span class="badge b-blue">연말정산</span></td><td>분납금액 중복반영</td><td>누적 분납금액 &lt; 납부한 총 분납금액</td><td><span class="code">HR_TAX_YREND_INFO</span></td><td><span class="code">PRM+SCDR+THRD 합계</span><br><span class="code">INTAX_AMT</span></td><td><span class="badge b-grn">✔ 충족</span></td><td>PRM+SCDR+THRD 누적합계 vs A06 금액 합계 비교</td></tr>
+      </tbody>
+    </table></div>
+    <div class="warn-box"><p>⚠️ <strong>* 표시 항목 — 급여모듈 테이블 별도 참조 필요</strong><br>차월지급구분·급여자료 집계·동일금액 연속지급·지급조서 연계 등은 급여모듈의 별도 테이블(HR_PAY_DTL 등)을 조인해야 완전한 탐지가 가능합니다. 탐지 결과는 <strong>AI_WITHREP_RISK_RST</strong> 테이블에 저장합니다.</p></div>
+    <div class="sub-title2">✅ 충족현황 요약</div>
+    <div class="tw" style="max-width:480px"><table>
+      <thead><tr><th>판정</th><th>항목수</th><th>비율</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-grn">✔ 충족</span></td><td>13개</td><td>68%</td><td>기존 테이블만으로 탐지 가능</td></tr>
+        <tr><td><span class="badge b-org">△ 부분충족</span></td><td>4개</td><td>21%</td><td>급여모듈 테이블 추가 참조 필요</td></tr>
+        <tr><td><span class="badge b-red">✘ 신규필요</span></td><td>2개</td><td>11%</td><td>차월지급 플래그, 지급조서 연계 — 별도 처리</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ===== TAB 2: 논리설계 ===== -->
+<div id="tab-logical" class="section">
+  <div class="sec-title">🔗 논리설계 (Entity-Relationship Diagram)</div>
+  <p class="sec-desc">원천징수이행상황신고서 + 지방소득세특별징수명세서 관련 <strong>22개 엔티티</strong>(원천징수 17 + 지방소득세 3 + AI 신규 2)의 관계도 및 주요 속성을 정의합니다.</p>
+
+  <div class="subsec">
+    <div class="sub-title">📐 엔티티 관계도 (논리 ERD)</div>
+    <div class="rel-diagram">
+      <div class="rel-title">▶ 핵심 관계 구조</div>
+      <!-- 1계층: 기준정보 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">기준정보</span>
+        <span class="rel-from">HR_CONFIG_MST</span><span class="rel-arrow">─</span>
+        <span class="rel-from">HR_WITHREPCODE_INFO</span><span class="rel-arrow">─</span>
+        <span class="rel-from">SEMP</span><span class="rel-arrow">─</span>
+        <span class="rel-from">HR_EARNER_MST</span>
+      </div>
+      <!-- 2계층: 문서번호 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">문서관리</span>
+        <span class="rel-from">HR_CONFIG_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_TAX_DOCU_INFO</span>
+        <span class="rel-card">CO_CD + MENU_CD + DIV_CD</span>
+      </div>
+      <!-- 3계층: 신고서 마스터 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">신고서</span>
+        <span class="rel-from">HR_TAX_DOCU_INFO</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">1</span>
+        <span class="rel-to">HR_WITHREP_MST</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO</span>
+        <span class="rel-via">(자기참조: LSMTH_DOC_NO → DOC_NO)</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from">HR_TAX_DOCU_INFO</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">1</span>
+        <span class="rel-to">HR_TAX_REPORT_MST</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO + DECL_FG</span>
+      </div>
+      <!-- 4계층: 신고서 디테일 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">신고 상세</span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_WITHREP_DTL</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO + TAB_FG + SRC_LEV_FG_CD</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_WITHREP_DTL2</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO + NO_SQ</span>
+        <span class="rel-via">(환급신청부표)</span>
+      </div>
+      <!-- 5계층: 기납부세액 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">기납부세액</span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_WITHREP_PRE_LIST</span>
+        <span class="rel-card">+ IMPR_TP + NO_SQ</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_WITHREP_PRE_LIST2</span>
+        <span class="rel-card">+ IMPR_TP + WORKAREA_FG + NO_SQ</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">1</span>
+        <span class="rel-to">HR_WITHREP_PRE_SUM</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO</span>
+        <span class="rel-via">(기납부세액 차이조정)</span>
+      </div>
+      <!-- 6계층: 전월미환급 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">전월미환급</span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_WITHREP_LNR_LIST</span>
+        <span class="rel-card">+ IMPR_TP + NO_SQ</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_WITHREP_LNR_LIST2</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO + NO_SQ</span>
+        <span class="rel-via">(환급세액 조정현황)</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_WITHREP_NEXT_LIST</span>
+        <span class="rel-card">+ NO_SQ</span>
+        <span class="rel-via">(차월이월승계)</span>
+      </div>
+      <!-- 7계층: 연말정산 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">연말정산</span>
+        <span class="rel-from">SEMP</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to">HR_YREND_MST</span>
+        <span class="rel-card">CO_CD + TXFORM_CD + STL_TP + RVERS_YY + EMP_CD</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from">HR_YREND_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">1</span>
+        <span class="rel-to">HR_TAX_YREND_INFO</span>
+        <span class="rel-card">CO_CD + TXFORM_CD + STL_TP + STL_YM + EMP_CD</span>
+      </div>
+      <!-- 8계층: AI -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#ai;min-width:80px;color:#4527a0">🤖 AI</span>
+        <span class="rel-from" style="background:#ede7f6;color:#4527a0">AI_WITHREP_RISK_RULE</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to" style="background:#ede7f6;color:#4527a0">AI_WITHREP_RISK_RST</span>
+        <span class="rel-card">RULE_CD</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from">HR_WITHREP_MST</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to" style="background:#ede7f6;color:#4527a0">AI_WITHREP_RISK_RST</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO</span>
+      </div>
+      <!-- 코드참조 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">코드참조</span>
+        <span class="rel-from">HR_WITHREPCODE_INFO</span><span class="rel-arrow">N</span><span style="font-size:14px">←</span><span class="rel-arrow">참조</span>
+        <span class="rel-to">HR_WITHREP_DTL</span>
+        <span class="rel-card">DECL_CD ↔ SRC_LEV_FG_CD</span>
+      </div>
+      <!-- 9계층: 지방소득세 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#007a5e;min-width:80px">🏙️ 지방소득세</span>
+        <span class="rel-from" style="background:#e0f2f1;color:#004d40">HR_TAX_LTAX_MAT</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to" style="background:#e0f2f1;color:#004d40">HR_TAX_LTAX_DTL</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO + APLCNTAR_CD</span>
+        <span class="rel-via">(자기참조: LSMTH_DOC_NO → DOC_NO)</span>
+      </div>
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px"></span>
+        <span class="rel-from" style="background:#e0f2f1;color:#004d40">HR_TAX_LTAX_MAT</span><span class="rel-arrow">1</span><span style="font-size:14px">→</span><span class="rel-arrow">N</span>
+        <span class="rel-to" style="background:#e0f2f1;color:#004d40">HR_TAX_LTAX_PAYMENT</span>
+        <span class="rel-card">CO_CD + DIV_CD + DOC_NO + APLCNTAR_CD + IMPR_FG</span>
+        <span class="rel-via">(소득구분별 납부집계)</span>
+      </div>
+      <!-- 연계 -->
+      <div class="rel-row"><span style="font-size:11px;font-weight:700;color:#666;min-width:80px">📎 연계</span>
+        <span class="rel-from">HR_WITHREP_DTL</span><span class="rel-arrow">귀속기간</span><span style="font-size:14px">↔</span>
+        <span class="rel-to" style="background:#e0f2f1;color:#004d40">HR_TAX_LTAX_MAT</span>
+        <span class="rel-card">CO_CD + DIV_CD + RVERS_START_YM (간접연계)</span>
+        <span class="rel-via">INTAX_AMT × 10% ≈ LOCTAX_AMT</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">📋 엔티티 목록 및 설명</div>
+    <div class="tw"><table>
+      <thead><tr><th style="width:40px">No</th><th style="width:90px">분류</th><th style="width:200px">테이블명 (물리)</th><th>논리명</th><th>PK 구성</th><th>주요 역할</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="badge b-gray">기준</span></td><td><span class="code">HR_CONFIG_MST</span></td><td>원천세신고지설정</td><td>CO_CD + CONFIG_CD</td><td>회사별 신고지(사업장) 설정 기준 정보</td></tr>
+        <tr><td>2</td><td><span class="badge b-gray">기준</span></td><td><span class="code">SEMP</span></td><td>인사정보(사원마스터)</td><td>CO_CD + EMP_CD</td><td>사원 기본정보, 입사/퇴사일, 재직구분</td></tr>
+        <tr><td>3</td><td><span class="badge b-gray">기준</span></td><td><span class="code">HR_EARNER_MST</span></td><td>소득자정보(그밖의소득)</td><td>CO_CD + INCMPER_NO</td><td>근로소득 외 소득자(기타소득·사업소득 등) 마스터</td></tr>
+        <tr><td>4</td><td><span class="badge b-gray">코드</span></td><td><span class="code">HR_WITHREPCODE_INFO</span></td><td>원천징수이행상황신고서 코드정보</td><td>RVERS_YM + DECL_CD</td><td>신고서 항목 코드 (A01~A99) 정의, 귀속연월별 유효코드</td></tr>
+        <tr><td>5</td><td><span class="badge b-blue">문서</span></td><td><span class="code">HR_TAX_DOCU_INFO</span></td><td>문서번호 정보</td><td>CO_CD + MENU_CD + IMPR_FG + DIV_CD + DECL_YY + DOC_NO + DECL_FG</td><td>신고서 문서번호 채번 및 기본 신고기간 관리</td></tr>
+        <tr><td>6</td><td><span class="badge b-org">신고서</span></td><td><span class="code">HR_WITHREP_MST</span></td><td>원천징수이행상황신고서 마스터</td><td>CO_CD + DIV_CD + DOC_NO</td><td>신고서 헤더(귀속기간·지급기간·환급금액·마감여부 등)</td></tr>
+        <tr><td>7</td><td><span class="badge b-org">신고서</span></td><td><span class="code">HR_WITHREP_DTL</span></td><td>신고서 디테일 (주화면~법인원천부표)</td><td>CO_CD + DIV_CD + DOC_NO + TAB_FG + SRC_LEV_FG_CD</td><td>신고서 항목별 인원수·지급총액·소득세·농특세·가산세·납부세액</td></tr>
+        <tr><td>8</td><td><span class="badge b-org">신고서</span></td><td><span class="code">HR_WITHREP_DTL2</span></td><td>환급신청부표</td><td>CO_CD + DIV_CD + DOC_NO + NO_SQ</td><td>환급신청부표 항목별 귀속·지급월, 결정세액, 공제세액 등</td></tr>
+        <tr><td>9</td><td><span class="badge b-teal">기납부</span></td><td><span class="code">HR_WITHREP_PRE_LIST</span></td><td>기납부세액_원천징수 신고납부 현황</td><td>CO_CD + DIV_CD + DOC_NO + IMPR_TP + NO_SQ</td><td>기납부세액 참조용 원천징수 신고납부 이력 리스트</td></tr>
+        <tr><td>10</td><td><span class="badge b-teal">기납부</span></td><td><span class="code">HR_WITHREP_PRE_LIST2</span></td><td>기납부세액_지급명세서</td><td>CO_CD + DIV_CD + DOC_NO + IMPR_TP + WORKAREA_FG + NO_SQ</td><td>지급명세서 기준 기납부세액 인원별 상세 내역</td></tr>
+        <tr><td>11</td><td><span class="badge b-teal">기납부</span></td><td><span class="code">HR_WITHREP_PRE_SUM</span></td><td>기납부세액 차이 조정현황</td><td>CO_CD + DIV_CD + DOC_NO</td><td>신고납부 vs 지급명세서 기납부세액 차이 금액 및 조정사유</td></tr>
+        <tr><td>12</td><td><span class="badge b-pur">환급</span></td><td><span class="code">HR_WITHREP_LNR_LIST</span></td><td>전월미환급세액 내역</td><td>CO_CD + DIV_CD + DOC_NO + IMPR_TP + NO_SQ</td><td>환급신청시 전월미환급세액 발생·납부·당월환급 내역</td></tr>
+        <tr><td>13</td><td><span class="badge b-pur">환급</span></td><td><span class="code">HR_WITHREP_LNR_LIST2</span></td><td>환급세액 조정현황</td><td>CO_CD + DIV_CD + DOC_NO + NO_SQ</td><td>전월미환급→기환급신청→잔액→당월환급→조정대상→차월이월 흐름</td></tr>
+        <tr><td>14</td><td><span class="badge b-pur">환급</span></td><td><span class="code">HR_WITHREP_NEXT_LIST</span></td><td>차월이월승계</td><td>CO_CD + DIV_CD + DOC_NO + NO_SQ</td><td>분할·합병·이전 등 사유로 차월에 이월되는 환급세액 승계내역</td></tr>
+        <tr><td>15</td><td><span class="badge b-blue">연말</span></td><td><span class="code">HR_YREND_MST</span></td><td>연말정산 마스터</td><td>CO_CD + TXFORM_CD + STL_TP + RVERS_YY + EMP_CD</td><td>연말정산 기본설정(세대주·인적공제변동·외국인단일세율·분납 등)</td></tr>
+        <tr><td>16</td><td><span class="badge b-blue">연말</span></td><td><span class="code">HR_TAX_YREND_INFO</span></td><td>연말정산 집계내역</td><td>CO_CD + TXFORM_CD + STL_TP + STL_YM + EMP_CD</td><td>연말정산 결과 집계 (총지급액·소득세·지방소득세·농특세·1~3차 납부)</td></tr>
+        <tr><td>17</td><td><span class="badge b-blue">전자</span></td><td><span class="code">HR_TAX_REPORT_MST</span></td><td>전자신고 마스터</td><td>CO_CD + MENU_CD + IMPR_FG + DIV_CD + DECL_YY + DOC_NO + DECL_FG + APLCNTAR_CD</td><td>전자신고 제출 이력, 파일명, 신고결과코드, 인원수·세액 요약</td></tr>
+        <tr><td>18</td><td><span class="badge b-ai">🤖AI</span></td><td><span class="code">AI_WITHREP_RISK_RULE</span></td><td>AI 위험분석 규칙</td><td>RULE_CD</td><td>위험분석 항목 정의 (구분·항목명·점검기준·임계값·안내문구)</td></tr>
+        <tr><td>19</td><td><span class="badge b-ai">🤖AI</span></td><td><span class="code">AI_WITHREP_RISK_RST</span></td><td>AI 위험분석 결과</td><td>CO_CD + DIV_CD + DOC_NO + RULE_CD</td><td>신고서별 위험분석 결과 (탐지여부·실제값·기대값·차이·사용자확인)</td></tr>
+        <tr><td>20</td><td><span class="badge b-teal">🏙️지방세</span></td><td><span class="code">HR_TAX_LTAX_MAT</span></td><td>지방소득세특별징수명세서 마스터</td><td>CO_CD + DIV_CD + DOC_NO + APLCNTAR_CD</td><td>지방소득세 신고 헤더 (귀속기간·지급기간·지방세액·가산세·환급·납부세액·마감여부)</td></tr>
+        <tr><td>21</td><td><span class="badge b-teal">🏙️지방세</span></td><td><span class="code">HR_TAX_LTAX_DTL</span></td><td>지방소득세명세 디테일</td><td>CO_CD + DIV_CD + DOC_NO + APLCNTAR_CD + IMPR_FG + EMP_CD</td><td>소득자별 과세표준·산출세액·가산세·납부세액 상세 내역 (소득구분별)</td></tr>
+        <tr><td>22</td><td><span class="badge b-teal">🏙️지방세</span></td><td><span class="code">HR_TAX_LTAX_PAYMENT</span></td><td>지방소득세 납부집계</td><td>CO_CD + DIV_CD + DOC_NO + APLCNTAR_CD + IMPR_FG</td><td>소득구분별 인원수·과세표준·지방소득세 납부 집계</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">🔑 핵심 공통 키 설계</div>
+    <div class="info-box"><p>
+      📌 <strong>복합키 체계</strong><br><br>
+      • <strong>CO_CD (회사코드 varchar 4)</strong> — 모든 테이블의 최상위 식별자<br>
+      • <strong>DIV_CD (사업장코드 varchar 4)</strong> — 사업장(신고 단위) 식별자<br>
+      • <strong>DOC_NO (문서번호 varchar 20)</strong> — 신고서 고유 번호. HR_TAX_DOCU_INFO에서 채번<br>
+      • <strong>자기참조 관계</strong> — HR_WITHREP_MST.LSMTH_DOC_NO → 동 테이블 DOC_NO (전월 신고서 연결)<br>
+      • <strong>정기/수정신고 연결</strong> — HR_WITHREP_MST.FDRM_DECL_DOC_NO → 원본 정기신고 문서번호<br>
+      • <strong>연말정산 연계</strong> — HR_TAX_YREND_INFO.INTL_KEY_NO → 지급조서 테이블 연계키 (외부참조)
+    </p></div>
+  </div>
+</div>
+
+<!-- ===== TAB 3: 물리설계 ===== -->
+<div id="tab-physical" class="section">
+  <div class="sec-title">🗄️ 물리설계 (Physical DB Design — DDL)</div>
+  <p class="sec-desc">MySQL 8.x 기준 CREATE TABLE DDL, 인덱스, 주요 외래키 제약조건입니다. 문자셋: utf8mb4 / 엔진: InnoDB</p>
+
+  <div class="subsec">
+    <div class="sub-title">① 기준정보 테이블</div>
+
+    <div class="sub-title2">HR_CONFIG_MST — 원천세신고지설정</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_CONFIG_MST</span> (
+  <span class="nm">CO_CD</span>            <span class="kw">VARCHAR</span>(4)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">CONFIG_CD</span>        <span class="kw">VARCHAR</span>(10)  <span class="op">NOT NULL</span>  <span class="cm">COMMENT '설정코드'</span>,
+  <span class="nm">CONFIG_NM</span>        <span class="kw">VARCHAR</span>(50)           <span class="cm">COMMENT '기준항목'</span>,
+  <span class="nm">CHAR_CD_VAL_DC</span>   <span class="kw">VARCHAR</span>(100)          <span class="cm">COMMENT '항목코드값'</span>,
+  <span class="nm">NUML_AMT</span>         <span class="kw">DECIMAL</span>(19,4) <span class="op">DEFAULT</span> <span class="str">0</span>,
+  <span class="nm">ADDCLAS_SETUP_DC</span> <span class="kw">VARCHAR</span>(200),
+  <span class="nm">INSERT_DESC_DC</span>   <span class="kw">VARCHAR</span>(200)          <span class="cm">COMMENT '통제항목설명'</span>,
+  <span class="nm">MENU_CD</span>          <span class="kw">VARCHAR</span>(20)           <span class="cm">COMMENT '메뉴코드'</span>,
+  <span class="nm">MENU_NM</span>          <span class="kw">VARCHAR</span>(100)          <span class="cm">COMMENT '메뉴명'</span>,
+  <span class="nm">FG_CD</span>            <span class="kw">VARCHAR</span>(5),
+  <span class="nm">MENU_FG_CD</span>       <span class="kw">VARCHAR</span>(20)  <span class="op">NOT NULL</span> <span class="op">DEFAULT</span> <span class="str">'*'</span>,
+  <span class="nm">INSERT_ID</span>        <span class="kw">VARCHAR</span>(32),
+  <span class="nm">INSERT_IP</span>        <span class="kw">VARCHAR</span>(15),
+  <span class="nm">INSERT_DT</span>        <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>        <span class="kw">VARCHAR</span>(32),
+  <span class="nm">MODIFY_IP</span>        <span class="kw">VARCHAR</span>(15),
+  <span class="nm">MODIFY_DT</span>        <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, CONFIG_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'원천세신고지설정'</span>;</pre>
+
+    <div class="sub-title2">HR_WITHREPCODE_INFO — 원천징수이행상황신고서 코드정보</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_WITHREPCODE_INFO</span> (
+  <span class="nm">RVERS_YM</span>         <span class="kw">VARCHAR</span>(6)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '귀속년월'</span>,
+  <span class="nm">DECL_CD</span>          <span class="kw">VARCHAR</span>(5)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '신고코드 (A01~A99)'</span>,
+  <span class="nm">DECL_NM</span>          <span class="kw">VARCHAR</span>(50)           <span class="cm">COMMENT '신고코드명'</span>,
+  <span class="nm">NO_SQ</span>            <span class="kw">DECIMAL</span>(5,0)          <span class="cm">COMMENT '순번'</span>,
+  <span class="nm">TAB_TP</span>           <span class="kw">VARCHAR</span>(5)            <span class="cm">COMMENT '탭유형'</span>,
+  <span class="nm">DECL_CD_CONN_DC</span>  <span class="kw">VARCHAR</span>(200)          <span class="cm">COMMENT '코드연결설명'</span>,
+  <span class="nm">IMPR_FG</span>          <span class="kw">VARCHAR</span>(3)            <span class="cm">COMMENT '소득구분'</span>,
+  <span class="nm">INSERT_ID</span>        <span class="kw">VARCHAR</span>(10),
+  <span class="nm">INSERT_IP</span>        <span class="kw">VARCHAR</span>(15),
+  <span class="nm">INSERT_DT</span>        <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>        <span class="kw">VARCHAR</span>(10),
+  <span class="nm">MODIFY_IP</span>        <span class="kw">VARCHAR</span>(15),
+  <span class="nm">MODIFY_DT</span>        <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (RVERS_YM, DECL_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'원천징수이행상황신고서 코드정보'</span>;</pre>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">② 문서번호 · 신고서 핵심 테이블</div>
+
+    <div class="sub-title2">HR_TAX_DOCU_INFO — 문서번호 정보</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_TAX_DOCU_INFO</span> (
+  <span class="nm">CO_CD</span>            <span class="kw">VARCHAR</span>(4)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">MENU_CD</span>          <span class="kw">VARCHAR</span>(20)  <span class="op">NOT NULL</span>  <span class="cm">COMMENT '메뉴코드'</span>,
+  <span class="nm">IMPR_FG</span>          <span class="kw">VARCHAR</span>(3)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '소득구분'</span>,
+  <span class="nm">DIV_CD</span>           <span class="kw">VARCHAR</span>(4)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">DECL_YY</span>          <span class="kw">VARCHAR</span>(4)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '신고연도'</span>,
+  <span class="nm">DOC_NO</span>           <span class="kw">VARCHAR</span>(20)  <span class="op">NOT NULL</span>  <span class="cm">COMMENT '문서번호'</span>,
+  <span class="nm">DECL_FG</span>          <span class="kw">VARCHAR</span>(3)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '신고구분 (정기/수정/기한후)'</span>,
+  <span class="nm">RVERS_START_YM</span>   <span class="kw">VARCHAR</span>(6)            <span class="cm">COMMENT '귀속시작년월'</span>,
+  <span class="nm">RVERS_END_YM</span>     <span class="kw">VARCHAR</span>(6)            <span class="cm">COMMENT '귀속종료년월'</span>,
+  <span class="nm">PAYSTD_START_YM</span>  <span class="kw">VARCHAR</span>(6)            <span class="cm">COMMENT '지급기준시작년월'</span>,
+  <span class="nm">PAYSTD_END_YM</span>    <span class="kw">VARCHAR</span>(6)            <span class="cm">COMMENT '지급기준종료년월'</span>,
+  <span class="nm">SBMT_DT</span>          <span class="kw">VARCHAR</span>(8)            <span class="cm">COMMENT '제출일'</span>,
+  <span class="nm">PAYTX_AMT</span>        <span class="kw">DECIMAL</span>(19,4)         <span class="cm">COMMENT '납부세액'</span>,
+  <span class="nm">PAYPLC_DC</span>        <span class="kw">VARCHAR</span>(200)          <span class="cm">COMMENT '납부장소'</span>,
+  <span class="nm">UNPPSN_INCL_YN</span>   <span class="kw">VARCHAR</span>(1)           <span class="cm">COMMENT '일용직포함여부'</span>,
+  <span class="nm">BIZOBDN_INCL_YN</span>  <span class="kw">VARCHAR</span>(1)           <span class="cm">COMMENT '사업소득포함여부'</span>,
+  <span class="nm">PAYSTD_DT</span>        <span class="kw">VARCHAR</span>(8),
+  <span class="nm">PAYSLRY_DT</span>       <span class="kw">VARCHAR</span>(8),
+  <span class="nm">FDRM_DECL_DOC_NO</span> <span class="kw">VARCHAR</span>(20)          <span class="cm">COMMENT '정기신고문서번호'</span>,
+  <span class="nm">LSMTH_DOC_NO</span>     <span class="kw">VARCHAR</span>(20)          <span class="cm">COMMENT '전월문서번호'</span>,
+  <span class="nm">ELTR_ATHZ_ST_CD</span>  <span class="kw">VARCHAR</span>(5)           <span class="cm">COMMENT '전자승인상태코드'</span>,
+  <span class="nm">CLOSE_YN</span>         <span class="kw">VARCHAR</span>(1)           <span class="cm">COMMENT '마감여부'</span>,
+  <span class="nm">LMNREF_AMT</span>       <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">PINCOMETX_AMT</span>    <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">PFARMTX_AMT</span>      <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">LMFREF_AMT</span>       <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">IMPR_DSPS_YN</span>     <span class="kw">VARCHAR</span>(1) <span class="op">DEFAULT</span> <span class="str">'N'</span> <span class="cm">COMMENT '소득처분여부'</span>,
+  <span class="nm">ILMP_PYM_TP</span>      <span class="kw">VARCHAR</span>(3) <span class="op">DEFAULT</span> <span class="str">'N'</span>,
+  <span class="nm">INSERT_ID</span>        <span class="kw">VARCHAR</span>(10),
+  <span class="nm">INSERT_IP</span>        <span class="kw">VARCHAR</span>(15),
+  <span class="nm">INSERT_DT</span>        <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>        <span class="kw">VARCHAR</span>(10),
+  <span class="nm">MODIFY_IP</span>        <span class="kw">VARCHAR</span>(15),
+  <span class="nm">MODIFY_DT</span>        <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, MENU_CD, IMPR_FG, DIV_CD, DECL_YY, DOC_NO, DECL_FG)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'문서번호 정보'</span>;
+
+<span class="cm">-- 인덱스</span>
+<span class="kw">CREATE INDEX</span> IDX_DOCU_CO_DIV_DOC <span class="op">ON</span> HR_TAX_DOCU_INFO (CO_CD, DIV_CD, DOC_NO);
+<span class="kw">CREATE INDEX</span> IDX_DOCU_CO_DECL_YY <span class="op">ON</span> HR_TAX_DOCU_INFO (CO_CD, DIV_CD, DECL_YY, DECL_FG);</pre>
+
+    <div class="sub-title2">HR_WITHREP_MST — 원천징수이행상황신고서 마스터</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_WITHREP_MST</span> (
+  <span class="nm">CO_CD</span>                 <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">DIV_CD</span>                <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">DOC_NO</span>                <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '문서번호'</span>,
+  <span class="nm">DECL_FG_CD</span>            <span class="kw">VARCHAR</span>(5)              <span class="cm">COMMENT '신고구분'</span>,
+  <span class="nm">SRC_DECL_FG_CD</span>        <span class="kw">VARCHAR</span>(5)              <span class="cm">COMMENT '원천신고구분코드'</span>,
+  <span class="nm">RVERS_START_YM</span>        <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '귀속시작년월'</span>,
+  <span class="nm">RVERS_END_YM</span>          <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '귀속종료년월'</span>,
+  <span class="nm">PAY_START_YM</span>          <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '지급시작년월'</span>,
+  <span class="nm">PAY_END_YM</span>            <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '지급종료년월'</span>,
+  <span class="nm">SBMT_DT</span>               <span class="kw">VARCHAR</span>(8)              <span class="cm">COMMENT '제출일'</span>,
+  <span class="nm">IMPR_DSPS_YN</span>          <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '소득처분여부'</span>,
+  <span class="nm">YREND_YN</span>              <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '연말정산여부'</span>,
+  <span class="nm">RETURN_REQ_YN</span>         <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '환급신청여부'</span>,
+  <span class="nm">CLOSE_YN</span>              <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '마감여부'</span>,
+  <span class="nm">LMNREF_TAX_AMT</span>        <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '전월미환급세금액'</span>,
+  <span class="nm">PRE_REQ_TAX_AMT</span>       <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '기환급신청세금액'</span>,
+  <span class="nm">LMNREF_SBTR_BLNC_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '전월미환급차감잔액'</span>,
+  <span class="nm">THMN_GNRL_RETURN_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '당월일반환급'</span>,
+  <span class="nm">THMN_TRSPY_RETURN_AMT</span> <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '당월신탁재산환급'</span>,
+  <span class="nm">THMN_ETREF_FNNCO_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '당월기타환급금융회사'</span>,
+  <span class="nm">THMN_ETREF_MERGE_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '당월기타환급합병등'</span>,
+  <span class="nm">ADT_REFUTX_AMT</span>        <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '조정대상환급세'</span>,
+  <span class="nm">THMN_TOT_ADRTX_AMT</span>    <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '당월총조정환급세'</span>,
+  <span class="nm">NEMOX_REFUTX_AMT</span>      <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '차월이월환급세 ★위험분석 key필드'</span>,
+  <span class="nm">LSMTH_DOC_NO</span>          <span class="kw">VARCHAR</span>(20)             <span class="cm">COMMENT '전월문서번호 ★전월비교 연결키'</span>,
+  <span class="nm">FDRM_DECL_DOC_NO</span>      <span class="kw">VARCHAR</span>(20)             <span class="cm">COMMENT '정기신고문서번호'</span>,
+  <span class="nm">RETURN_REQ_AMT</span>        <span class="kw">DECIMAL</span>(19,4) <span class="op">DEFAULT</span> 0 <span class="cm">COMMENT '환급신청금액'</span>,
+  <span class="nm">RETURN_ACNT_BANK_CD</span>   <span class="kw">VARCHAR</span>(5)              <span class="cm">COMMENT '환급계좌은행코드'</span>,
+  <span class="nm">RETURN_ACNT_DPST_DC</span>   <span class="kw">VARCHAR</span>(100),
+  <span class="nm">REFUTAX_ACNT_NO</span>       <span class="kw">VARCHAR</span>(100)            <span class="cm">COMMENT '국세환급금계좌번호'</span>,
+  <span class="nm">DATA_FG</span>               <span class="kw">VARCHAR</span>(3)              <span class="cm">COMMENT '데이터구분'</span>,
+  <span class="nm">YREND_TAXAMT_FG</span>       <span class="kw">VARCHAR</span>(3)              <span class="cm">COMMENT '연말정산세액구분'</span>,
+  <span class="nm">INSERT_ID</span>             <span class="kw">VARCHAR</span>(10),
+  <span class="nm">INSERT_IP</span>             <span class="kw">VARCHAR</span>(15),
+  <span class="nm">INSERT_DT</span>             <span class="kw">DATETIME</span>               <span class="cm">COMMENT '등록일시 ★신고서 생성시각'</span>,
+  <span class="nm">MODIFY_ID</span>             <span class="kw">VARCHAR</span>(10),
+  <span class="nm">MODIFY_IP</span>             <span class="kw">VARCHAR</span>(15),
+  <span class="nm">MODIFY_DT</span>             <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'원천징수이행상황신고서 마스터'</span>;
+
+<span class="cm">-- 인덱스</span>
+<span class="kw">CREATE INDEX</span> IDX_WITHREP_MST_RVERS   <span class="op">ON</span> HR_WITHREP_MST (CO_CD, DIV_CD, RVERS_START_YM, RVERS_END_YM);
+<span class="kw">CREATE INDEX</span> IDX_WITHREP_MST_LSMTH   <span class="op">ON</span> HR_WITHREP_MST (CO_CD, DIV_CD, LSMTH_DOC_NO);</pre>
+
+    <div class="sub-title2">HR_WITHREP_DTL — 신고서 디테일 (주화면~법인원천부표)</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_WITHREP_DTL</span> (
+  <span class="nm">CO_CD</span>           <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">DIV_CD</span>          <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">DOC_NO</span>          <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '문서번호'</span>,
+  <span class="nm">TAB_FG</span>          <span class="kw">VARCHAR</span>(3)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '탭구분 (주화면/소득처분/법인원천부표 등)'</span>,
+  <span class="nm">SRC_LEV_FG_CD</span>   <span class="kw">VARCHAR</span>(5)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '원천징수구분코드 (A01~A99)'</span>,
+  <span class="nm">NOPL_CNT</span>        <span class="kw">DECIMAL</span>(10,0)           <span class="cm">COMMENT '인원수'</span>,
+  <span class="nm">PAY_TOT_AMT</span>     <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '지급총금액 ★비교분석 핵심'</span>,
+  <span class="nm">INTAX_AMT</span>       <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '소득세금액 ★비교분석 핵심'</span>,
+  <span class="nm">FARMTAX_AMT</span>     <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '농어촌특별세액'</span>,
+  <span class="nm">ADDTAX_AMT</span>      <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '가산세금액'</span>,
+  <span class="nm">THMN_ADRTX_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '당월조정환급세'</span>,
+  <span class="nm">PYM_INTAX_AMT</span>   <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '납부소득세 ★A06 납부금액'</span>,
+  <span class="nm">PYM_FARMTAX_AMT</span> <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '납부농어촌특별세'</span>,
+  <span class="nm">SORT_SQ</span>         <span class="kw">DECIMAL</span>(5,0)            <span class="cm">COMMENT '정렬순번'</span>,
+  <span class="nm">INSERT_ID</span>       <span class="kw">VARCHAR</span>(10),
+  <span class="nm">INSERT_IP</span>       <span class="kw">VARCHAR</span>(15),
+  <span class="nm">INSERT_DT</span>       <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>       <span class="kw">VARCHAR</span>(10),
+  <span class="nm">MODIFY_IP</span>       <span class="kw">VARCHAR</span>(15),
+  <span class="nm">MODIFY_DT</span>       <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, TAB_FG, SRC_LEV_FG_CD),
+  <span class="op">CONSTRAINT</span> FK_WITHREP_DTL_MST <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO)
+    <span class="op">REFERENCES</span> HR_WITHREP_MST (CO_CD, DIV_CD, DOC_NO)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'원천징수이행상황신고서 디테일'</span>;
+
+<span class="kw">CREATE INDEX</span> IDX_WITHREP_DTL_CODE <span class="op">ON</span> HR_WITHREP_DTL (CO_CD, DIV_CD, DOC_NO, SRC_LEV_FG_CD);</pre>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">③ 환급·기납부세액·전월미환급 테이블</div>
+
+    <div class="sub-title2">HR_WITHREP_DTL2 — 환급신청부표</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_WITHREP_DTL2</span> (
+  <span class="nm">CO_CD</span>                <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>,
+  <span class="nm">DIV_CD</span>               <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>,
+  <span class="nm">DOC_NO</span>               <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>,
+  <span class="nm">NO_SQ</span>                <span class="kw">DECIMAL</span>(5,0)  <span class="op">NOT NULL</span>  <span class="cm">COMMENT '순번'</span>,
+  <span class="nm">IMPR_TP</span>              <span class="kw">VARCHAR</span>(5)              <span class="cm">COMMENT '소득유형'</span>,
+  <span class="nm">RVERS_YM</span>             <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '귀속년월'</span>,
+  <span class="nm">PAY_YM</span>               <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '지급년월'</span>,
+  <span class="nm">SRC_LEV_FG_CD</span>        <span class="kw">VARCHAR</span>(5),
+  <span class="nm">TAB_FG</span>               <span class="kw">VARCHAR</span>(3),
+  <span class="nm">NOPL_CNT</span>             <span class="kw">DECIMAL</span>(10,0),
+  <span class="nm">PAY_TOT_AMT</span>          <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">DTMN_TAX_AMT</span>         <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '결정세액'</span>,
+  <span class="nm">PREPAY_CUR_TAX_AMT</span>   <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '기납부(당해연도)'</span>,
+  <span class="nm">PREPAY_PRE_TAX_AMT</span>   <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '기납부(전년도)'</span>,
+  <span class="nm">DDCTTX_AMT</span>           <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '공제세액'</span>,
+  <span class="nm">THMN_ADRTX_AMT</span>       <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">RETURN_REQ_AMT</span>       <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '환급신청금액'</span>,
+  <span class="nm">INSPY_AMT</span>            <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '분납금액'</span>,
+  <span class="nm">SORT_SQ</span>              <span class="kw">DECIMAL</span>(5,0),
+  <span class="nm">INSERT_ID</span>  <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>  <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, NO_SQ),
+  <span class="op">CONSTRAINT</span> FK_WITHREP_DTL2_MST <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO)
+    <span class="op">REFERENCES</span> HR_WITHREP_MST (CO_CD, DIV_CD, DOC_NO)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'환급신청부표'</span>;</pre>
+
+    <div class="sub-title2">HR_WITHREP_PRE_LIST / PRE_LIST2 / PRE_SUM — 기납부세액 관련</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_WITHREP_PRE_LIST</span> (   <span class="cm">-- 기납부세액_원천징수 신고납부 현황</span>
+  <span class="nm">CO_CD</span>    <span class="kw">VARCHAR</span>(4)   <span class="op">NOT NULL</span>, <span class="nm">DIV_CD</span>  <span class="kw">VARCHAR</span>(4)  <span class="op">NOT NULL</span>,
+  <span class="nm">DOC_NO</span>   <span class="kw">VARCHAR</span>(20)  <span class="op">NOT NULL</span>, <span class="nm">IMPR_TP</span> <span class="kw">VARCHAR</span>(5)  <span class="op">NOT NULL</span>  <span class="cm">COMMENT '소득유형'</span>,
+  <span class="nm">NO_SQ</span>    <span class="kw">DECIMAL</span>(5,0) <span class="op">NOT NULL</span>  <span class="cm">COMMENT '순번'</span>,
+  <span class="nm">RVERS_YM</span>      <span class="kw">VARCHAR</span>(6),    <span class="nm">PAY_YM</span>       <span class="kw">VARCHAR</span>(6),
+  <span class="nm">SRC_LEV_FG_CD</span> <span class="kw">VARCHAR</span>(3),    <span class="nm">NOPL_CNT</span>     <span class="kw">DECIMAL</span>(10,0),
+  <span class="nm">PAY_TOT_AMT</span>   <span class="kw">DECIMAL</span>(19,4), <span class="nm">INTAX_AMT</span>    <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">FARMTAX_AMT</span>   <span class="kw">DECIMAL</span>(19,4), <span class="nm">ADDTAX_AMT</span>   <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">SORT_SQ</span>       <span class="kw">DECIMAL</span>(5,0),
+  <span class="nm">INSERT_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, IMPR_TP, NO_SQ),
+  <span class="op">CONSTRAINT</span> FK_PRE_LIST_MST <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO) <span class="op">REFERENCES</span> HR_WITHREP_MST (CO_CD, DIV_CD, DOC_NO)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4;
+
+<span class="kw">CREATE TABLE</span> <span class="fn">HR_WITHREP_PRE_SUM</span> (   <span class="cm">-- 기납부세액 차이 조정현황</span>
+  <span class="nm">CO_CD</span> <span class="kw">VARCHAR</span>(4) <span class="op">NOT NULL</span>, <span class="nm">DIV_CD</span> <span class="kw">VARCHAR</span>(4) <span class="op">NOT NULL</span>, <span class="nm">DOC_NO</span> <span class="kw">VARCHAR</span>(20) <span class="op">NOT NULL</span>,
+  <span class="nm">INTAX_AMT</span>        <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '소득세'</span>,
+  <span class="nm">PREPAY_INTAX_AMT</span> <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '기납부소득세'</span>,
+  <span class="nm">INTAX_DFNNT_AMT</span>  <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '소득세차이'</span>,
+  <span class="nm">FARMTAX_AMT</span>      <span class="kw">DECIMAL</span>(19,4), <span class="nm">PREPAY_FARMTAX_AMT</span> <span class="kw">DECIMAL</span>(19,4), <span class="nm">FARMTAX_DFNNT_AMT</span> <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">MDSTRM_RETR_YN</span>   <span class="kw">VARCHAR</span>(1) <span class="cm">COMMENT '중도퇴직여부'</span>,
+  <span class="nm">TRNSFRN_YN</span>       <span class="kw">VARCHAR</span>(1) <span class="cm">COMMENT '전출여부'</span>,
+  <span class="nm">MVT_YN</span>           <span class="kw">VARCHAR</span>(1) <span class="cm">COMMENT '이동여부'</span>,
+  <span class="nm">MERGE_YN</span>         <span class="kw">VARCHAR</span>(1) <span class="cm">COMMENT '합병여부'</span>,
+  <span class="nm">ETC_YN</span>           <span class="kw">VARCHAR</span>(1) <span class="cm">COMMENT '기타여부'</span>,
+  <span class="nm">REASON_DC</span>        <span class="kw">VARCHAR</span>(100) <span class="cm">COMMENT '사유내용'</span>,
+  <span class="nm">INSERT_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO),
+  <span class="op">CONSTRAINT</span> FK_PRE_SUM_MST <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO) <span class="op">REFERENCES</span> HR_WITHREP_MST (CO_CD, DIV_CD, DOC_NO)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4;</pre>
+
+    <div class="sub-title2">HR_WITHREP_LNR_LIST / LNR_LIST2 / NEXT_LIST — 전월미환급·차월이월</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_WITHREP_LNR_LIST2</span> (  <span class="cm">-- 환급세액 조정현황</span>
+  <span class="nm">CO_CD</span> <span class="kw">VARCHAR</span>(4) <span class="op">NOT NULL</span>, <span class="nm">DIV_CD</span> <span class="kw">VARCHAR</span>(4) <span class="op">NOT NULL</span>, <span class="nm">DOC_NO</span> <span class="kw">VARCHAR</span>(20) <span class="op">NOT NULL</span>,
+  <span class="nm">NO_SQ</span>               <span class="kw">DECIMAL</span>(5,0) <span class="op">NOT NULL</span>,
+  <span class="nm">RVERS_YM</span>            <span class="kw">VARCHAR</span>(6), <span class="nm">PAY_YM</span> <span class="kw">VARCHAR</span>(6),
+  <span class="nm">LMNREF_TAX_AMT</span>      <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '전월미환급세액'</span>,
+  <span class="nm">PRE_REQ_TAX_AMT</span>     <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '기환급신청세액'</span>,
+  <span class="nm">LMNREF_SBTR_BLNC_AMT</span> <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '차감잔액'</span>,
+  <span class="nm">THMN_REFUTX_AMT</span>     <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '당월환급세액'</span>,
+  <span class="nm">ADT_REFUTX_AMT</span>      <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '조정대상환급세액'</span>,
+  <span class="nm">THMN_TOT_ADRTX_AMT</span>  <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '당월총조정환급세액'</span>,
+  <span class="nm">NEMOX_REFUTX_AMT</span>    <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '차월이월환급세액'</span>,
+  <span class="nm">INSERT_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, NO_SQ),
+  <span class="op">CONSTRAINT</span> FK_LNR_LIST2_MST <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO) <span class="op">REFERENCES</span> HR_WITHREP_MST (CO_CD, DIV_CD, DOC_NO)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4;
+
+<span class="kw">CREATE TABLE</span> <span class="fn">HR_WITHREP_NEXT_LIST</span> (  <span class="cm">-- 차월이월승계</span>
+  <span class="nm">CO_CD</span> <span class="kw">VARCHAR</span>(4) <span class="op">NOT NULL</span>, <span class="nm">DIV_CD</span> <span class="kw">VARCHAR</span>(4) <span class="op">NOT NULL</span>, <span class="nm">DOC_NO</span> <span class="kw">VARCHAR</span>(20) <span class="op">NOT NULL</span>,
+  <span class="nm">NO_SQ</span>                <span class="kw">DECIMAL</span>(5,0) <span class="op">NOT NULL</span>,
+  <span class="nm">BIZR_NO</span>              <span class="kw">VARCHAR</span>(20) <span class="cm">COMMENT '사업자번호'</span>,
+  <span class="nm">SHNM_NM</span>              <span class="kw">VARCHAR</span>(50) <span class="cm">COMMENT '상호명'</span>,
+  <span class="nm">SUSS_BSS_DT</span>          <span class="kw">VARCHAR</span>(8)  <span class="cm">COMMENT '승계기준일'</span>,
+  <span class="nm">SUSS_BSS_FG</span>          <span class="kw">VARCHAR</span>(3)  <span class="cm">COMMENT '승계구분'</span>,
+  <span class="nm">RVERS_YM</span>             <span class="kw">VARCHAR</span>(6), <span class="nm">PAY_YM</span> <span class="kw">VARCHAR</span>(6),
+  <span class="nm">NEMOX_REFUTX_AMT</span>     <span class="kw">DECIMAL</span>(19,4) <span class="cm">COMMENT '차월이월환급세액'</span>,
+  <span class="nm">INSERT_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, NO_SQ),
+  <span class="op">CONSTRAINT</span> FK_NEXT_LIST_MST <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO) <span class="op">REFERENCES</span> HR_WITHREP_MST (CO_CD, DIV_CD, DOC_NO)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4;</pre>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">④ 연말정산 · 전자신고 테이블</div>
+
+    <div class="sub-title2">HR_YREND_MST — 연말정산 마스터</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_YREND_MST</span> (
+  <span class="nm">CO_CD</span>           <span class="kw">VARCHAR</span>(4)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">TXFORM_CD</span>       <span class="kw">VARCHAR</span>(20)  <span class="op">NOT NULL</span>  <span class="cm">COMMENT '세무서식코드'</span>,
+  <span class="nm">STL_TP</span>          <span class="kw">VARCHAR</span>(5)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '정산유형'</span>,
+  <span class="nm">RVERS_YY</span>        <span class="kw">VARCHAR</span>(4)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '귀속연도'</span>,
+  <span class="nm">EMP_CD</span>          <span class="kw">VARCHAR</span>(20)  <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사원코드'</span>,
+  <span class="nm">STL_YM</span>          <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '정산연월'</span>,
+  <span class="nm">DIV_CD</span>          <span class="kw">VARCHAR</span>(4)              <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">CLOSE_YN</span>        <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '마감여부'</span>,
+  <span class="nm">DECL_FG</span>         <span class="kw">VARCHAR</span>(3)              <span class="cm">COMMENT '신고구분'</span>,
+  <span class="nm">INSPY_REQ_YN</span>    <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '분납신청여부'</span>,
+  <span class="nm">FRNR_SINGL_TRTE_YN</span> <span class="kw">VARCHAR</span>(1)          <span class="cm">COMMENT '외국인단일세율여부'</span>,
+  <span class="nm">CALC_YN</span>         <span class="kw">VARCHAR</span>(1) <span class="op">DEFAULT</span> <span class="str">'N'</span> <span class="cm">COMMENT '계산여부'</span>,
+  <span class="nm">CALC_YN_DT</span>      <span class="kw">DATETIME</span>               <span class="cm">COMMENT '최종계산일시'</span>,
+  <span class="nm">RECPT_YN</span>        <span class="kw">VARCHAR</span>(1) <span class="op">DEFAULT</span> <span class="str">'Y'</span> <span class="cm">COMMENT '영수증조회여부'</span>,
+  <span class="nm">INSERT_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>  <span class="cm">COMMENT '★신고서 변경 후 연말정산 수정여부 비교키'</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, TXFORM_CD, STL_TP, RVERS_YY, EMP_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'연말정산 마스터'</span>;
+
+<span class="kw">CREATE INDEX</span> IDX_YREND_MST_EMP <span class="op">ON</span> HR_YREND_MST (CO_CD, EMP_CD, RVERS_YY);
+<span class="kw">CREATE INDEX</span> IDX_YREND_MST_DIV <span class="op">ON</span> HR_YREND_MST (CO_CD, DIV_CD, STL_YM);</pre>
+
+    <div class="sub-title2">HR_TAX_YREND_INFO — 연말정산 집계내역</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_TAX_YREND_INFO</span> (
+  <span class="nm">CO_CD</span>                   <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">TXFORM_CD</span>               <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '세무서식코드'</span>,
+  <span class="nm">STL_TP</span>                  <span class="kw">VARCHAR</span>(5)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '정산유형'</span>,
+  <span class="nm">STL_YM</span>                  <span class="kw">VARCHAR</span>(6)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '정산년월'</span>,
+  <span class="nm">EMP_CD</span>                  <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사원코드'</span>,
+  <span class="nm">DIV_CD</span>                  <span class="kw">VARCHAR</span>(4)              <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">PAY_TOT_AMT</span>             <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '총지급액 ★A04 비교'</span>,
+  <span class="nm">INTAX_AMT</span>               <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '소득세 ★A06 비교'</span>,
+  <span class="nm">DTMN_INTAX_AMT</span>          <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '결정소득세'</span>,
+  <span class="nm">PREPAY_INTAX_AMT</span>        <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '기납부소득세'</span>,
+  <span class="nm">PRM_PINCOMTAX_AMT</span>       <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '1차납부소득세 ★분납'</span>,
+  <span class="nm">SCDR_PINCOMTAX_AMT</span>      <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '2차납부소득세 ★분납'</span>,
+  <span class="nm">THRD_PINCOMTAX_AMT</span>      <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '3차납부소득세 ★분납'</span>,
+  <span class="nm">LOCINTAX_AMT</span>            <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '지방소득세'</span>,
+  <span class="nm">FARMTAX_AMT</span>             <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">INSPY_REQ_YN</span>            <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '분납신청여부'</span>,
+  <span class="nm">INTL_KEY_NO</span>             <span class="kw">VARCHAR</span>(50)             <span class="cm">COMMENT '연동키(지급조서 연계) ★외부참조'</span>,
+  <span class="nm">CLOSE_CD</span>                <span class="kw">VARCHAR</span>(3),
+  <span class="nm">INSERT_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, TXFORM_CD, STL_TP, STL_YM, EMP_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'연말정산 집계내역'</span>;</pre>
+
+    <div class="sub-title2">HR_TAX_REPORT_MST — 전자신고 마스터 <small style="color:#888;font-weight:400">(지방소득세 신고 이력도 동일 테이블 MENU_CD 구분)</small></div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_TAX_REPORT_MST</span> (
+  <span class="nm">CO_CD</span>             <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>,
+  <span class="nm">MENU_CD</span>           <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>,
+  <span class="nm">IMPR_FG</span>           <span class="kw">VARCHAR</span>(3)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '소득구분'</span>,
+  <span class="nm">DIV_CD</span>            <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>,
+  <span class="nm">DECL_YY</span>           <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>,
+  <span class="nm">DOC_NO</span>            <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>,
+  <span class="nm">DECL_FG</span>           <span class="kw">VARCHAR</span>(3)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '신고구분'</span>,
+  <span class="nm">APLCNTAR_CD</span>       <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '신청자코드'</span>,
+  <span class="nm">SBMT_DT</span>           <span class="kw">VARCHAR</span>(8)              <span class="cm">COMMENT '제출일'</span>,
+  <span class="nm">PAY_TOT_AMT</span>       <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">NOPL_CNT</span>          <span class="kw">DECIMAL</span>(10,0)           <span class="cm">COMMENT '인원수'</span>,
+  <span class="nm">PYM_TAX_AMT</span>       <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '납부세액'</span>,
+  <span class="nm">INTAX_AMT</span>         <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">LOCINTAX_AMT</span>      <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">FARMTAX_AMT</span>       <span class="kw">DECIMAL</span>(19,4),
+  <span class="nm">CLOSE_YN</span>          <span class="kw">VARCHAR</span>(1),
+  <span class="nm">DECL_RST_CD</span>       <span class="kw">VARCHAR</span>(3)              <span class="cm">COMMENT '신고결과코드'</span>,
+  <span class="nm">DATA_FG</span>           <span class="kw">VARCHAR</span>(3),
+  <span class="nm">FILE_DC</span>           <span class="kw">VARCHAR</span>(200)            <span class="cm">COMMENT '파일명'</span>,
+  <span class="nm">FILE_GROUP_KEY</span>    <span class="kw">BIGINT</span>(20),
+  <span class="nm">REPORT_NO</span>         <span class="kw">VARCHAR</span>(100)            <span class="cm">COMMENT '신고번호'</span>,
+  <span class="nm">INSERT_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span> <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, MENU_CD, IMPR_FG, DIV_CD, DECL_YY, DOC_NO, DECL_FG, APLCNTAR_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'전자신고 마스터'</span>;</pre>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">⑤ 지방소득세특별징수명세서 테이블</div>
+
+    <div class="sub-title2">HR_TAX_LTAX_MAT — 지방소득세특별징수명세서 마스터</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_TAX_LTAX_MAT</span> (
+  <span class="nm">CO_CD</span>               <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">DIV_CD</span>              <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">DOC_NO</span>              <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '문서번호'</span>,
+  <span class="nm">APLCNTAR_CD</span>         <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '신청자코드'</span>,
+  <span class="nm">DECL_FG</span>             <span class="kw">VARCHAR</span>(3)              <span class="cm">COMMENT '신고구분 (정기/수정/기한후)'</span>,
+  <span class="nm">DECL_TP</span>             <span class="kw">VARCHAR</span>(5)              <span class="cm">COMMENT '신고유형'</span>,
+  <span class="nm">RVERS_START_YM</span>      <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '귀속시작년월'</span>,
+  <span class="nm">RVERS_END_YM</span>        <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '귀속종료년월'</span>,
+  <span class="nm">PAYSTD_START_YM</span>     <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '지급기준시작년월'</span>,
+  <span class="nm">PAYSTD_END_YM</span>       <span class="kw">VARCHAR</span>(6)              <span class="cm">COMMENT '지급기준종료년월'</span>,
+  <span class="nm">SBMT_DT</span>             <span class="kw">VARCHAR</span>(8)              <span class="cm">COMMENT '제출일자'</span>,
+  <span class="nm">PAYSLRY_DT</span>          <span class="kw">VARCHAR</span>(8)              <span class="cm">COMMENT '급여지급일'</span>,
+  <span class="nm">LOCTAX_AMT</span>          <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '지방소득세액 ★원천소득세×10% 검증 핵심'</span>,
+  <span class="nm">ADDTAX_YN</span>           <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '가산세여부 (Y/N)'</span>,
+  <span class="nm">FXRT_ADDTAX_AMT</span>     <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '정률가산세금액'</span>,
+  <span class="nm">ADDNUM_DY</span>           <span class="kw">DECIMAL</span>(7,2)            <span class="cm">COMMENT '가산일수'</span>,
+  <span class="nm">DY_ADDTAX_AMT</span>       <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '일수가산세금액'</span>,
+  <span class="nm">ADJT_TAX_AMT</span>        <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '조정세액금액'</span>,
+  <span class="nm">PAYTX_AMT</span>           <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '납부세액금액 ★납부세액 검증 핵심'</span>,
+  <span class="nm">LMRETX_YREND_AMT</span>    <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '전월미환급_연말정산금액 ★전월이월 비교키'</span>,
+  <span class="nm">YREND_THMRTX_AMT</span>    <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '연말정산_당월환급세액'</span>,
+  <span class="nm">YREND_TMADRTX_AMT</span>   <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '연말정산_차월이월환급세액 ★차월비교 연결키'</span>,
+  <span class="nm">YREND_NEMORTX_AMT</span>   <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '연말정산_다음이월환급세액'</span>,
+  <span class="nm">LMRETX_RETIRE_AMT</span>   <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '전월미환급_중도퇴직금액 ★전월이월 비교키'</span>,
+  <span class="nm">RETIRE_THMRTX_AMT</span>   <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '중도퇴직_당월환급세액'</span>,
+  <span class="nm">RETIRE_TMADRTX_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '중도퇴직_차월이월환급세액'</span>,
+  <span class="nm">RETIRE_NEMORTX_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '중도퇴직_다음이월환급세액'</span>,
+  <span class="nm">PAYPLC_DC</span>           <span class="kw">VARCHAR</span>(200)            <span class="cm">COMMENT '납부처설명'</span>,
+  <span class="nm">LSMTH_DOC_NO</span>        <span class="kw">VARCHAR</span>(20)             <span class="cm">COMMENT '전월문서번호 ★전월비교 연결키'</span>,
+  <span class="nm">CLOSE_YN</span>            <span class="kw">VARCHAR</span>(1)              <span class="cm">COMMENT '마감여부'</span>,
+  <span class="nm">INSERT_ID</span>   <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span>  <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>   <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span>  <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, APLCNTAR_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'지방소득세특별징수명세서 마스터'</span>;
+
+<span class="cm">-- 인덱스</span>
+<span class="kw">CREATE INDEX</span> IDX_LTAX_MAT_RVERS   <span class="op">ON</span> HR_TAX_LTAX_MAT (CO_CD, DIV_CD, RVERS_START_YM, RVERS_END_YM);
+<span class="kw">CREATE INDEX</span> IDX_LTAX_MAT_LSMTH   <span class="op">ON</span> HR_TAX_LTAX_MAT (CO_CD, DIV_CD, LSMTH_DOC_NO);</pre>
+
+    <div class="sub-title2">HR_TAX_LTAX_DTL — 지방소득세 명세 디테일 (소득자별)</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_TAX_LTAX_DTL</span> (
+  <span class="nm">CO_CD</span>           <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">DIV_CD</span>          <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">DOC_NO</span>          <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '문서번호'</span>,
+  <span class="nm">APLCNTAR_CD</span>     <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '신청자코드'</span>,
+  <span class="nm">IMPR_FG</span>         <span class="kw">VARCHAR</span>(3)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '소득구분 (근로/기타/사업/퇴직 등)'</span>,
+  <span class="nm">EMP_CD</span>          <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사원코드'</span>,
+  <span class="nm">TAXSTD_AMT</span>      <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '과세표준액 ★PAYMENT와 합계 비교'</span>,
+  <span class="nm">COMTAX_AMT</span>      <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '산출세액'</span>,
+  <span class="nm">THMN_ADRTX_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '가산세금액'</span>,
+  <span class="nm">PAYTX_AMT</span>       <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '납부세액금액'</span>,
+  <span class="nm">RMK_DC</span>          <span class="kw">VARCHAR</span>(200)            <span class="cm">COMMENT '비고설명'</span>,
+  <span class="nm">FG_CD</span>           <span class="kw">VARCHAR</span>(5)              <span class="cm">COMMENT '구분코드'</span>,
+  <span class="nm">BLT_BIZAREA_CD</span>  <span class="kw">VARCHAR</span>(7)              <span class="cm">COMMENT '소속사업장코드'</span>,
+  <span class="nm">INSERT_ID</span>  <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>  <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span> <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, APLCNTAR_CD, IMPR_FG, EMP_CD),
+  <span class="op">CONSTRAINT</span> FK_LTAX_DTL_MAT <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO, APLCNTAR_CD)
+    <span class="op">REFERENCES</span> HR_TAX_LTAX_MAT (CO_CD, DIV_CD, DOC_NO, APLCNTAR_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'지방소득세 명세 디테일 (소득자별)'</span>;
+
+<span class="kw">CREATE INDEX</span> IDX_LTAX_DTL_EMP <span class="op">ON</span> HR_TAX_LTAX_DTL (CO_CD, DIV_CD, DOC_NO, EMP_CD);</pre>
+
+    <div class="sub-title2">HR_TAX_LTAX_PAYMENT — 지방소득세 납부집계 (소득구분별)</div>
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">HR_TAX_LTAX_PAYMENT</span> (
+  <span class="nm">CO_CD</span>       <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">DIV_CD</span>      <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">DOC_NO</span>      <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '문서번호'</span>,
+  <span class="nm">APLCNTAR_CD</span> <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>  <span class="cm">COMMENT '신청자코드'</span>,
+  <span class="nm">IMPR_FG</span>     <span class="kw">VARCHAR</span>(3)    <span class="op">NOT NULL</span>  <span class="cm">COMMENT '소득구분'</span>,
+  <span class="nm">NOPL_CNT</span>    <span class="kw">DECIMAL</span>(10,0)           <span class="cm">COMMENT '인원수 ★DTL 행수와 비교'</span>,
+  <span class="nm">TAXSTD_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '과세표준액 ★DTL 합계와 비교'</span>,
+  <span class="nm">LOCTAX_AMT</span>  <span class="kw">DECIMAL</span>(19,4)           <span class="cm">COMMENT '지방소득세금액'</span>,
+  <span class="nm">INSERT_ID</span>   <span class="kw">VARCHAR</span>(10), <span class="nm">INSERT_IP</span>  <span class="kw">VARCHAR</span>(15), <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>   <span class="kw">VARCHAR</span>(10), <span class="nm">MODIFY_IP</span>  <span class="kw">VARCHAR</span>(15), <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, APLCNTAR_CD, IMPR_FG),
+  <span class="op">CONSTRAINT</span> FK_LTAX_PMT_MAT <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO, APLCNTAR_CD)
+    <span class="op">REFERENCES</span> HR_TAX_LTAX_MAT (CO_CD, DIV_CD, DOC_NO, APLCNTAR_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'지방소득세 납부집계 (소득구분별)'</span>;
+
+<span class="kw">CREATE INDEX</span> IDX_LTAX_PMT_IMPR <span class="op">ON</span> HR_TAX_LTAX_PAYMENT (CO_CD, DIV_CD, DOC_NO, IMPR_FG);</pre>
+  </div>
+</div>
+
+<!-- ===== TAB 4: 지방소득세 설계 ===== -->
+<div id="tab-ltax" class="section">
+  <div class="sec-title">🏙️ 지방소득세특별징수명세서 — DB 설계 및 오류 비교 매핑</div>
+  <p class="sec-desc">지방소득세특별징수명세서 3개 테이블(MAT/DTL/PAYMENT) 명세와 AI 위험분석 오류 리스트를 비교 매핑합니다.<br>
+  <strong>비교 포인트:</strong> ① 테이블별 컬럼 명세 ② 오류항목별 탐지 가능 여부 판정 ③ 원천징수 이행상황신고서와의 연계 설계</p>
+
+  <div class="info-box"><p>
+    📌 <strong>3개 테이블 역할 요약</strong><br><br>
+    • <strong>HR_TAX_LTAX_MAT</strong> (마스터): 신고서 헤더 — 귀속기간·지방세액·가산세·환급세액(연말정산/퇴직)·납부세액·마감여부<br>
+    • <strong>HR_TAX_LTAX_DTL</strong> (디테일): 소득자별 상세 — 소득구분·사원코드·과세표준·산출세액·가산세·납부세액<br>
+    • <strong>HR_TAX_LTAX_PAYMENT</strong> (납부집계): 소득구분별 집계 — 인원수·과세표준·지방소득세 합계<br><br>
+    🔗 <strong>원천징수 연결키</strong>: CO_CD + DIV_CD + 귀속기간(RVERS_START_YM) — INTAX_AMT × 10% ≈ LOCTAX_AMT
+  </p></div>
+
+  <!-- subsec-1: 테이블 명세 -->
+  <div class="subsec">
+    <div class="sub-title">📋 테이블 명세서 — 3개 테이블 컬럼 정의</div>
+
+    <div class="sub-title2">① HR_TAX_LTAX_MAT — 지방소득세특별징수명세서 마스터 (PK: CO_CD + DIV_CD + DOC_NO + APLCNTAR_CD)</div>
+    <div class="tw"><table>
+      <thead><tr><th style="width:180px">Column Name</th><th>Comment</th><th style="width:120px">Data Type</th><th style="width:60px">NOT NULL</th><th style="width:50px">KEY</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td><span class="code">CO_CD</span></td><td>회사코드</td><td>varchar(4)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code">DIV_CD</span></td><td>사업장코드</td><td>varchar(4)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code">DOC_NO</span></td><td>문서번호</td><td>varchar(20)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code">APLCNTAR_CD</span></td><td>신청자코드</td><td>varchar(20)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code">DECL_FG</span></td><td>신고구분</td><td>varchar(3)</td><td></td><td></td><td>정기/수정/기한후</td></tr>
+        <tr><td><span class="code">DECL_TP</span></td><td>신고유형</td><td>varchar(5)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">RVERS_START_YM</span></td><td>귀속시작년월</td><td>varchar(6)</td><td></td><td><span class="badge b-idx">IDX</span></td><td>원천징수와 귀속기간으로 연계</td></tr>
+        <tr><td><span class="code">RVERS_END_YM</span></td><td>귀속종료년월</td><td>varchar(6)</td><td></td><td><span class="badge b-idx">IDX</span></td><td></td></tr>
+        <tr><td><span class="code">PAYSTD_START_YM</span></td><td>지급기준시작년월</td><td>varchar(6)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">PAYSTD_END_YM</span></td><td>지급기준종료년월</td><td>varchar(6)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">SBMT_DT</span></td><td>제출일자</td><td>varchar(8)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">PAYSLRY_DT</span></td><td>급여지급일</td><td>varchar(8)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code" style="color:#c62828">LOCTAX_AMT</span></td><td>지방소득세액</td><td>decimal(19,4)</td><td></td><td></td><td>★ 원천소득세×10% 검증 핵심</td></tr>
+        <tr><td><span class="code">ADDTAX_YN</span></td><td>가산세여부</td><td>varchar(1)</td><td></td><td></td><td>Y/N</td></tr>
+        <tr><td><span class="code">FXRT_ADDTAX_AMT</span></td><td>정률가산세금액</td><td>decimal(19,4)</td><td></td><td></td><td>가산세 계산 검증</td></tr>
+        <tr><td><span class="code">ADDNUM_DY</span></td><td>가산일수</td><td>decimal(7,2)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">DY_ADDTAX_AMT</span></td><td>일수가산세금액</td><td>decimal(19,4)</td><td></td><td></td><td>가산세 계산 검증</td></tr>
+        <tr><td><span class="code">ADJT_TAX_AMT</span></td><td>조정세액금액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code" style="color:#c62828">PAYTX_AMT</span></td><td>납부세액금액</td><td>decimal(19,4)</td><td></td><td></td><td>★ 납부세액 정합성 검증</td></tr>
+        <tr><td><span class="code" style="color:#1565c0">LMRETX_YREND_AMT</span></td><td>전월미환급_연말정산금액</td><td>decimal(19,4)</td><td></td><td></td><td>★ 전월 YREND_TMADRTX_AMT와 비교</td></tr>
+        <tr><td><span class="code">YREND_THMRTX_AMT</span></td><td>연말정산_당월환급세액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code" style="color:#1565c0">YREND_TMADRTX_AMT</span></td><td>연말정산_차월이월환급세액</td><td>decimal(19,4)</td><td></td><td></td><td>★ 차월 LMRETX_YREND_AMT 연결키</td></tr>
+        <tr><td><span class="code">YREND_NEMORTX_AMT</span></td><td>연말정산_다음이월환급세액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code" style="color:#1565c0">LMRETX_RETIRE_AMT</span></td><td>전월미환급_중도퇴직금액</td><td>decimal(19,4)</td><td></td><td></td><td>★ 전월 RETIRE_TMADRTX_AMT와 비교</td></tr>
+        <tr><td><span class="code">RETIRE_THMRTX_AMT</span></td><td>중도퇴직_당월환급세액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code" style="color:#1565c0">RETIRE_TMADRTX_AMT</span></td><td>중도퇴직_차월이월환급세액</td><td>decimal(19,4)</td><td></td><td></td><td>★ 차월 LMRETX_RETIRE_AMT 연결키</td></tr>
+        <tr><td><span class="code">RETIRE_NEMORTX_AMT</span></td><td>중도퇴직_다음이월환급세액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">PAYPLC_DC</span></td><td>납부처설명</td><td>varchar(200)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code" style="color:#c62828">LSMTH_DOC_NO</span></td><td>전월문서번호</td><td>varchar(20)</td><td></td><td><span class="badge b-idx">IDX</span></td><td>★ 전월비교 연결키 (자기참조)</td></tr>
+        <tr><td><span class="code">CLOSE_YN</span></td><td>마감여부</td><td>varchar(1)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">INSERT_ID / INSERT_IP / INSERT_DT</span></td><td>등록 정보</td><td>—</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">MODIFY_ID / MODIFY_IP / MODIFY_DT</span></td><td>수정 정보</td><td>—</td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="sub-title2">② HR_TAX_LTAX_DTL — 지방소득세 명세 디테일 (PK: CO_CD + DIV_CD + DOC_NO + APLCNTAR_CD + IMPR_FG + EMP_CD)</div>
+    <div class="tw"><table>
+      <thead><tr><th style="width:180px">Column Name</th><th>Comment</th><th style="width:120px">Data Type</th><th style="width:60px">NOT NULL</th><th style="width:50px">KEY</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td><span class="code">CO_CD</span></td><td>회사코드</td><td>varchar(4)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code">DIV_CD</span></td><td>사업장코드</td><td>varchar(4)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code">DOC_NO</span></td><td>문서번호</td><td>varchar(20)</td><td>✔</td><td><span class="badge b-pk">PK</span> <span class="badge b-fk">FK→MAT</span></td><td></td></tr>
+        <tr><td><span class="code">APLCNTAR_CD</span></td><td>신청자코드</td><td>varchar(20)</td><td>✔</td><td><span class="badge b-pk">PK</span> <span class="badge b-fk">FK→MAT</span></td><td></td></tr>
+        <tr><td><span class="code">IMPR_FG</span></td><td>소득구분</td><td>varchar(3)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td>근로/퇴직/기타/사업소득 구분</td></tr>
+        <tr><td><span class="code">EMP_CD</span></td><td>사원코드</td><td>varchar(20)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code" style="color:#c62828">TAXSTD_AMT</span></td><td>과세표준액</td><td>decimal(19,4)</td><td></td><td></td><td>★ PAYMENT.TAXSTD_AMT 합계 비교</td></tr>
+        <tr><td><span class="code">COMTAX_AMT</span></td><td>산출세액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">THMN_ADRTX_AMT</span></td><td>가산세금액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">PAYTX_AMT</span></td><td>납부세액금액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">RMK_DC</span></td><td>비고설명</td><td>varchar(200)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">FG_CD</span></td><td>구분코드</td><td>varchar(5)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">BLT_BIZAREA_CD</span></td><td>소속사업장코드</td><td>varchar(7)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">INSERT_DT / MODIFY_DT</span></td><td>등록/수정일시</td><td>datetime</td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="sub-title2">③ HR_TAX_LTAX_PAYMENT — 지방소득세 납부집계 (PK: CO_CD + DIV_CD + DOC_NO + APLCNTAR_CD + IMPR_FG)</div>
+    <div class="tw"><table>
+      <thead><tr><th style="width:180px">Column Name</th><th>Comment</th><th style="width:120px">Data Type</th><th style="width:60px">NOT NULL</th><th style="width:50px">KEY</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td><span class="code">CO_CD</span></td><td>회사코드</td><td>varchar(4)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code">DIV_CD</span></td><td>사업장코드</td><td>varchar(4)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code">DOC_NO</span></td><td>문서번호</td><td>varchar(20)</td><td>✔</td><td><span class="badge b-pk">PK</span> <span class="badge b-fk">FK→MAT</span></td><td></td></tr>
+        <tr><td><span class="code">APLCNTAR_CD</span></td><td>신청자코드</td><td>varchar(20)</td><td>✔</td><td><span class="badge b-pk">PK</span> <span class="badge b-fk">FK→MAT</span></td><td></td></tr>
+        <tr><td><span class="code">IMPR_FG</span></td><td>소득구분</td><td>varchar(3)</td><td>✔</td><td><span class="badge b-pk">PK</span></td><td></td></tr>
+        <tr><td><span class="code" style="color:#c62828">NOPL_CNT</span></td><td>인원수</td><td>decimal(10,0)</td><td></td><td></td><td>★ DTL 행수와 비교 (인원 불일치 탐지)</td></tr>
+        <tr><td><span class="code" style="color:#c62828">TAXSTD_AMT</span></td><td>과세표준액</td><td>decimal(19,4)</td><td></td><td></td><td>★ DTL.TAXSTD_AMT 합계와 비교</td></tr>
+        <tr><td><span class="code">LOCTAX_AMT</span></td><td>지방소득세금액</td><td>decimal(19,4)</td><td></td><td></td><td></td></tr>
+        <tr><td><span class="code">INSERT_DT / MODIFY_DT</span></td><td>등록/수정일시</td><td>datetime</td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- subsec-2: 오류리스트 비교 매핑 -->
+  <div class="subsec">
+    <div class="sub-title">📊 AI 오류리스트 ↔ 지방소득세 테이블 비교 매핑 (7개 항목)</div>
+    <div class="info-box"><p>
+      📌 <strong>비교 방법론</strong><br>
+      STEP 1. 지방소득세 신고 시 발생할 수 있는 오류 유형 도출<br>
+      STEP 2. 오류 탐지에 필요한 필드를 3개 테이블에서 매핑<br>
+      STEP 3. 충족 판정 → 전 항목 <span class="badge b-grn">✔ 충족</span> (3개 테이블 내에서 탐지 가능)
+    </p></div>
+    <div class="tw"><table>
+      <thead><tr>
+        <th style="width:80px">구분</th><th style="width:160px">오류 항목명</th>
+        <th>점검기준 (Logic)</th><th style="width:175px">참조 테이블</th>
+        <th style="width:200px">참조 필드</th><th style="width:60px">충족</th><th>갭/비고</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge b-red">계산오류</span></td>
+          <td>지방소득세율 이탈</td>
+          <td>LOCTAX_AMT ÷ 원천징수 INTAX_AMT ≠ 10% (허용 ±1% 초과 시)</td>
+          <td><span class="code">HR_TAX_LTAX_MAT</span><br><span class="code">HR_WITHREP_DTL</span></td>
+          <td><span class="code">LOCTAX_AMT</span><br><span class="code">INTAX_AMT</span><br><span class="code">RVERS_START_YM</span></td>
+          <td><span class="badge b-grn">✔ 충족</span></td>
+          <td>귀속기간 기준으로 두 테이블 조인 후 비율 계산. INTAX_AMT × 10% ↔ LOCTAX_AMT 직접 비교</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-teal">환급오류</span></td>
+          <td>연말정산 전월이월 불일치</td>
+          <td>전월 YREND_TMADRTX_AMT ≠ 당월 LMRETX_YREND_AMT</td>
+          <td><span class="code">HR_TAX_LTAX_MAT</span></td>
+          <td><span class="code">YREND_TMADRTX_AMT</span><br><span class="code">LMRETX_YREND_AMT</span><br><span class="code">LSMTH_DOC_NO</span></td>
+          <td><span class="badge b-grn">✔ 충족</span></td>
+          <td>LSMTH_DOC_NO로 전월 레코드 조회 → 전월 YREND_TMADRTX ↔ 당월 LMRETX_YREND 직접 비교 (원천징수 RISK_011과 동일 패턴)</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-teal">환급오류</span></td>
+          <td>중도퇴직 전월이월 불일치</td>
+          <td>전월 RETIRE_TMADRTX_AMT ≠ 당월 LMRETX_RETIRE_AMT</td>
+          <td><span class="code">HR_TAX_LTAX_MAT</span></td>
+          <td><span class="code">RETIRE_TMADRTX_AMT</span><br><span class="code">LMRETX_RETIRE_AMT</span><br><span class="code">LSMTH_DOC_NO</span></td>
+          <td><span class="badge b-grn">✔ 충족</span></td>
+          <td>연말정산 전월이월과 동일 로직. LSMTH_DOC_NO 체인으로 전월 비교</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-red">계산오류</span></td>
+          <td>납부세액 계산 불일치</td>
+          <td>PAYTX_AMT ≠ LOCTAX_AMT + 가산세 - 환급조정</td>
+          <td><span class="code">HR_TAX_LTAX_MAT</span></td>
+          <td><span class="code">PAYTX_AMT</span><br><span class="code">LOCTAX_AMT</span><br><span class="code">FXRT_ADDTAX_AMT</span><br><span class="code">DY_ADDTAX_AMT</span><br><span class="code">ADJT_TAX_AMT</span></td>
+          <td><span class="badge b-grn">✔ 충족</span></td>
+          <td>LOCTAX_AMT + FXRT_ADDTAX_AMT + DY_ADDTAX_AMT - ADJT_TAX_AMT = PAYTX_AMT 수식 검증. 단일 테이블에서 처리 가능</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-red">계산오류</span></td>
+          <td>가산세 계산 오류</td>
+          <td>ADDTAX_YN='Y'인데 FXRT_ADDTAX_AMT 또는 DY_ADDTAX_AMT가 0 또는 ADDNUM_DY 기준 불일치</td>
+          <td><span class="code">HR_TAX_LTAX_MAT</span></td>
+          <td><span class="code">ADDTAX_YN</span><br><span class="code">FXRT_ADDTAX_AMT</span><br><span class="code">DY_ADDTAX_AMT</span><br><span class="code">ADDNUM_DY</span></td>
+          <td><span class="badge b-grn">✔ 충족</span></td>
+          <td>ADDTAX_YN='Y' 조건 + 정률가산세·일수가산세 금액 존재 여부 교차 검증. ADDNUM_DY > 0이면 DY_ADDTAX_AMT > 0이어야 함</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-org">데이터오류</span></td>
+          <td>인원수·과세표준 불일치</td>
+          <td>PAYMENT.NOPL_CNT ≠ DTL 레코드 수 (동일 IMPR_FG 기준)</td>
+          <td><span class="code">HR_TAX_LTAX_PAYMENT</span><br><span class="code">HR_TAX_LTAX_DTL</span></td>
+          <td><span class="code">NOPL_CNT</span><br><span class="code">TAXSTD_AMT</span><br><span class="code">IMPR_FG</span></td>
+          <td><span class="badge b-grn">✔ 충족</span></td>
+          <td>GROUP BY IMPR_FG 기준 DTL COUNT(*) ↔ PAYMENT.NOPL_CNT 비교. TAXSTD_AMT 합계도 동일 방식으로 검증</td>
+        </tr>
+        <tr>
+          <td><span class="badge b-org">데이터오류</span></td>
+          <td>신고서 생성 후 데이터 변경</td>
+          <td>MAT.INSERT_DT &lt; DTL 또는 PAYMENT의 최종 MODIFY_DT</td>
+          <td><span class="code">HR_TAX_LTAX_MAT</span><br><span class="code">HR_TAX_LTAX_DTL</span></td>
+          <td><span class="code">INSERT_DT</span><br><span class="code">MODIFY_DT</span></td>
+          <td><span class="badge b-grn">✔ 충족</span></td>
+          <td>MAT.INSERT_DT vs MAX(DTL.MODIFY_DT) 비교로 집계 후 변경 감지 (원천징수 RISK_016과 동일 패턴)</td>
+        </tr>
+      </tbody>
+    </table></div>
+    <div class="warn-box"><p>
+      ⚠️ <strong>충족현황: 7개 항목 전원 ✔ 충족</strong><br>
+      지방소득세 3개 테이블(MAT/DTL/PAYMENT)만으로 모든 AI 오류 탐지 항목을 커버합니다.<br>
+      원천징수 연계항목(세율 이탈)은 <strong>HR_WITHREP_DTL 조인 필요</strong> — RVERS_START_YM 기준 간접 연계 사용.
+    </p></div>
+    <div class="tw" style="max-width:480px"><table>
+      <thead><tr><th>구분</th><th>항목수</th><th>비율</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-grn">✔ 충족</span></td><td>7개</td><td>100%</td><td>3개 테이블 내에서 탐지 가능</td></tr>
+        <tr><td><span class="badge b-org">△ 부분충족</span></td><td>0개</td><td>0%</td><td>—</td></tr>
+        <tr><td><span class="badge b-red">✘ 신규필요</span></td><td>0개</td><td>0%</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <!-- subsec-3: 연계설계 + 탐지쿼리 -->
+  <div class="subsec">
+    <div class="sub-title">🔗 원천징수이행상황신고서 ↔ 지방소득세 연계 설계</div>
+    <div class="rel-diagram">
+      <div class="rel-title">▶ 두 신고서의 연계 구조</div>
+      <div class="rel-row">
+        <span style="font-size:11px;font-weight:700;color:#666;min-width:90px">공통키</span>
+        <span class="rel-from">HR_WITHREP_DTL</span>
+        <span class="rel-arrow">CO_CD + DIV_CD</span>
+        <span style="font-size:14px">+</span>
+        <span class="rel-card">RVERS_START_YM (귀속연월 일치)</span>
+        <span style="font-size:14px">↔</span>
+        <span class="rel-to" style="background:#e0f2f1;color:#004d40">HR_TAX_LTAX_MAT</span>
+      </div>
+      <div class="rel-row">
+        <span style="font-size:11px;font-weight:700;color:#666;min-width:90px">세율검증</span>
+        <span class="rel-from">INTAX_AMT × 0.1</span>
+        <span class="rel-arrow">≈</span>
+        <span class="rel-to" style="background:#e0f2f1;color:#004d40">LOCTAX_AMT</span>
+        <span class="rel-card">허용 오차: ±1% (소수점 반올림)</span>
+      </div>
+      <div class="rel-row">
+        <span style="font-size:11px;font-weight:700;color:#666;min-width:90px">연말정산</span>
+        <span class="rel-from">HR_TAX_YREND_INFO.LOCINTAX_AMT</span>
+        <span class="rel-arrow">→</span>
+        <span class="rel-to" style="background:#e0f2f1;color:#004d40">HR_TAX_LTAX_MAT.YREND_THMRTX_AMT</span>
+        <span class="rel-via">(연말정산 지방소득세 당월환급)</span>
+      </div>
+      <div class="rel-row">
+        <span style="font-size:11px;font-weight:700;color:#666;min-width:90px">전월이월</span>
+        <span class="rel-from" style="background:#e0f2f1;color:#004d40">YREND_TMADRTX_AMT (t월)</span>
+        <span class="rel-arrow">→</span>
+        <span class="rel-to" style="background:#e0f2f1;color:#004d40">LMRETX_YREND_AMT (t+1월)</span>
+        <span class="rel-via">자기참조 LSMTH_DOC_NO 체인</span>
+      </div>
+      <div class="rel-row">
+        <span style="font-size:11px;font-weight:700;color:#666;min-width:90px">독립 DOC</span>
+        <span class="rel-card" style="background:#fff8e1;color:#e65100">⚠️ 원천징수 DOC_NO ≠ 지방소득세 DOC_NO (별도 채번)</span>
+        <span class="rel-via">귀속기간 + CO_CD + DIV_CD 기준으로 간접 연결</span>
+      </div>
+    </div>
+    <div class="tw" style="max-width:700px">
+      <table>
+        <thead><tr><th>연계항목</th><th>원천징수 필드</th><th>지방소득세 필드</th><th>연계방법</th></tr></thead>
+        <tbody>
+          <tr><td>소득세 → 지방소득세 (10%)</td><td><span class="code">HR_WITHREP_DTL.INTAX_AMT</span></td><td><span class="code">HR_TAX_LTAX_MAT.LOCTAX_AMT</span></td><td>귀속기간 기준 JOIN → 비율 검증</td></tr>
+          <tr><td>연말정산 지방소득세</td><td><span class="code">HR_TAX_YREND_INFO.LOCINTAX_AMT</span></td><td><span class="code">HR_TAX_LTAX_MAT.YREND_THMRTX_AMT</span></td><td>사원코드 + 귀속연월 기준 비교</td></tr>
+          <tr><td>전월이월 자기참조</td><td><span class="code">HR_WITHREP_MST.LSMTH_DOC_NO</span></td><td><span class="code">HR_TAX_LTAX_MAT.LSMTH_DOC_NO</span></td><td>각각 독립 관리, 동일 패턴</td></tr>
+          <tr><td>마감여부</td><td><span class="code">HR_WITHREP_MST.CLOSE_YN</span></td><td><span class="code">HR_TAX_LTAX_MAT.CLOSE_YN</span></td><td>동시 마감 여부 교차 확인</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">🔍 지방소득세 주요 탐지 쿼리 예시</div>
+    <div class="sub-title2">① 지방소득세율 이탈 탐지</div>
+    <pre><span class="cm">-- 지방소득세율 이탈 탐지: LOCTAX_AMT ÷ 원천소득세 ≠ 10%</span>
+<span class="kw">SELECT</span>
+  l.CO_CD, l.DIV_CD, l.DOC_NO,
+  <span class="str">'LTAX_RATE'</span>          <span class="kw">AS</span> RULE_CD,
+  l.LOCTAX_AMT         <span class="kw">AS</span> ACTUAL_VAL,
+  <span class="op">SUM</span>(w.INTAX_AMT) * 0.1  <span class="kw">AS</span> EXPECTED_VAL,
+  l.LOCTAX_AMT - <span class="op">SUM</span>(w.INTAX_AMT) * 0.1  <span class="kw">AS</span> DIFF_AMT,
+  <span class="kw">CASE WHEN</span> <span class="op">ABS</span>(l.LOCTAX_AMT - <span class="op">SUM</span>(w.INTAX_AMT) * 0.1)
+           / <span class="op">NULLIF</span>(<span class="op">SUM</span>(w.INTAX_AMT) * 0.1, 0) > 0.01
+       <span class="kw">THEN</span> <span class="str">'Y'</span> <span class="kw">ELSE</span> <span class="str">'N'</span> <span class="kw">END</span>  <span class="kw">AS</span> DETECT_YN
+<span class="kw">FROM</span> HR_TAX_LTAX_MAT l
+<span class="kw">JOIN</span> HR_WITHREP_DTL  w <span class="op">ON</span> w.CO_CD = l.CO_CD
+                        <span class="op">AND</span> w.DIV_CD = l.DIV_CD
+                        <span class="op">AND</span> <span class="kw">LEFT</span>(w.DOC_NO, 6) = l.RVERS_START_YM  <span class="cm">-- 귀속기간 간접연계</span>
+<span class="kw">WHERE</span> l.CO_CD = <span class="str">?</span> <span class="op">AND</span> l.DIV_CD = <span class="str">?</span> <span class="op">AND</span> l.DOC_NO = <span class="str">?</span>
+<span class="kw">GROUP BY</span> l.CO_CD, l.DIV_CD, l.DOC_NO, l.LOCTAX_AMT;</pre>
+
+    <div class="sub-title2">② 연말정산 전월이월 불일치 탐지</div>
+    <pre><span class="cm">-- 전월 YREND_TMADRTX_AMT ≠ 당월 LMRETX_YREND_AMT</span>
+<span class="kw">SELECT</span>
+  cur.CO_CD, cur.DIV_CD, cur.DOC_NO, cur.APLCNTAR_CD,
+  <span class="str">'LTAX_YREND_LMREF'</span>      <span class="kw">AS</span> RULE_CD,
+  <span class="kw">CASE WHEN</span> pre.YREND_TMADRTX_AMT != cur.LMRETX_YREND_AMT
+       <span class="kw">THEN</span> <span class="str">'Y'</span> <span class="kw">ELSE</span> <span class="str">'N'</span> <span class="kw">END</span>  <span class="kw">AS</span> DETECT_YN,
+  cur.LMRETX_YREND_AMT    <span class="kw">AS</span> ACTUAL_VAL,
+  pre.YREND_TMADRTX_AMT   <span class="kw">AS</span> EXPECTED_VAL,
+  cur.LMRETX_YREND_AMT - pre.YREND_TMADRTX_AMT  <span class="kw">AS</span> DIFF_AMT
+<span class="kw">FROM</span> HR_TAX_LTAX_MAT cur
+<span class="kw">JOIN</span> HR_TAX_LTAX_MAT pre
+  <span class="op">ON</span>  pre.CO_CD       = cur.CO_CD
+  <span class="op">AND</span> pre.DIV_CD      = cur.DIV_CD
+  <span class="op">AND</span> pre.DOC_NO      = cur.LSMTH_DOC_NO   <span class="cm">-- 전월 문서번호 연결</span>
+  <span class="op">AND</span> pre.APLCNTAR_CD = cur.APLCNTAR_CD
+<span class="kw">WHERE</span> cur.CO_CD = <span class="str">?</span> <span class="op">AND</span> cur.DIV_CD = <span class="str">?</span> <span class="op">AND</span> cur.DOC_NO = <span class="str">?</span>;</pre>
+
+    <div class="sub-title2">③ 인원수·과세표준 불일치 탐지</div>
+    <pre><span class="cm">-- PAYMENT.NOPL_CNT ↔ DTL COUNT 불일치 탐지</span>
+<span class="kw">SELECT</span>
+  p.CO_CD, p.DIV_CD, p.DOC_NO, p.APLCNTAR_CD, p.IMPR_FG,
+  <span class="str">'LTAX_NOPL_MISMATCH'</span>     <span class="kw">AS</span> RULE_CD,
+  p.NOPL_CNT               <span class="kw">AS</span> EXPECTED_CNT,
+  <span class="op">COUNT</span>(d.EMP_CD)          <span class="kw">AS</span> ACTUAL_CNT,
+  p.TAXSTD_AMT             <span class="kw">AS</span> EXPECTED_TAXSTD,
+  <span class="op">SUM</span>(d.TAXSTD_AMT)        <span class="kw">AS</span> ACTUAL_TAXSTD,
+  <span class="kw">CASE WHEN</span> p.NOPL_CNT != <span class="op">COUNT</span>(d.EMP_CD)
+         <span class="op">OR</span> <span class="op">ABS</span>(p.TAXSTD_AMT - <span class="op">SUM</span>(d.TAXSTD_AMT)) > 1
+       <span class="kw">THEN</span> <span class="str">'Y'</span> <span class="kw">ELSE</span> <span class="str">'N'</span> <span class="kw">END</span>  <span class="kw">AS</span> DETECT_YN
+<span class="kw">FROM</span> HR_TAX_LTAX_PAYMENT p
+<span class="kw">JOIN</span> HR_TAX_LTAX_DTL     d
+  <span class="op">ON</span>  d.CO_CD       = p.CO_CD
+  <span class="op">AND</span> d.DIV_CD      = p.DIV_CD
+  <span class="op">AND</span> d.DOC_NO      = p.DOC_NO
+  <span class="op">AND</span> d.APLCNTAR_CD = p.APLCNTAR_CD
+  <span class="op">AND</span> d.IMPR_FG     = p.IMPR_FG
+<span class="kw">WHERE</span> p.CO_CD = <span class="str">?</span> <span class="op">AND</span> p.DIV_CD = <span class="str">?</span> <span class="op">AND</span> p.DOC_NO = <span class="str">?</span>
+<span class="kw">GROUP BY</span> p.CO_CD, p.DIV_CD, p.DOC_NO, p.APLCNTAR_CD, p.IMPR_FG,
+         p.NOPL_CNT, p.TAXSTD_AMT;</pre>
+  </div>
+
+</div>
+
+<!-- ===== TAB 5: AI 위험분석 ===== -->
+<div id="tab-ai" class="section">
+  <div class="sec-title">🤖 AI 위험분석 신규 테이블 설계</div>
+  <p class="sec-desc">비교 매핑 분석 결과를 바탕으로 AI 위험분석 탐지 규칙과 결과를 저장하는 2개의 신규 테이블을 설계합니다.</p>
+
+  <div class="info-box"><p>
+    📌 <strong>설계 원칙</strong><br><br>
+    • <strong>AI_WITHREP_RISK_RULE</strong>: 위험분석 항목의 메타 정보(점검기준·임계값·안내문구·참조테이블)를 정의하는 규칙 테이블<br>
+    • <strong>AI_WITHREP_RISK_RST</strong>: 신고서(DOC_NO) 단위로 각 규칙 적용 결과(탐지여부·실제값·기대값·차이·사용자확인)를 저장하는 결과 테이블<br>
+    • 기존 테이블 수정 없이 <strong>완전 분리 구조</strong>로 설계 → 확장·제거 용이<br>
+    • 규칙은 운영 중 추가/수정 가능한 데이터 드리븐 방식 채택
+  </p></div>
+
+  <div class="subsec">
+    <div class="sub-title">AI_WITHREP_RISK_RULE — AI 위험분석 규칙 테이블</div>
+    <div class="tw"><table>
+      <thead><tr><th>컬럼명</th><th>타입</th><th>PK</th><th>설명</th><th>예시값</th></tr></thead>
+      <tbody>
+        <tr><td><span class="code">RULE_CD</span></td><td>VARCHAR(10)</td><td><span class="badge b-pk">PK</span></td><td>위험분석 규칙코드</td><td>RISK_001</td></tr>
+        <tr><td><span class="code">RISK_CTGR_CD</span></td><td>VARCHAR(10)</td><td></td><td>구분 (UNDER_REPT/DATA_MISS/DATA_DUPL/REFUND/YREND)</td><td>UNDER_REPT</td></tr>
+        <tr><td><span class="code">RULE_NM</span></td><td>VARCHAR(100)</td><td></td><td>위험항목명</td><td>소득세액 급감</td></tr>
+        <tr><td><span class="code">CHECK_STD_DC</span></td><td>TEXT</td><td></td><td>점검기준 상세설명</td><td>지급총액 전월대비 10% 이내, 소득세 30% 이상 감소</td></tr>
+        <tr><td><span class="code">GUIDE_MSG</span></td><td>VARCHAR(500)</td><td></td><td>사용자 안내문구</td><td>지급총액은 평소와 유사하나, 소득세액만 크게 감소했습니다.</td></tr>
+        <tr><td><span class="code">REF_TABLE_NM</span></td><td>VARCHAR(200)</td><td></td><td>참조테이블명 (콤마 구분)</td><td>HR_WITHREP_DTL,HR_WITHREP_MST</td></tr>
+        <tr><td><span class="code">REF_FIELD_NM</span></td><td>VARCHAR(200)</td><td></td><td>참조필드명 (콤마 구분)</td><td>PAY_TOT_AMT,INTAX_AMT</td></tr>
+        <tr><td><span class="code">THRSHLD_RATE</span></td><td>DECIMAL(5,2)</td><td></td><td>임계율 (%)</td><td>30.00</td></tr>
+        <tr><td><span class="code">THRSHLD_AMT</span></td><td>DECIMAL(19,4)</td><td></td><td>임계금액</td><td>NULL</td></tr>
+        <tr><td><span class="code">ACTIVE_YN</span></td><td>VARCHAR(1)</td><td></td><td>활성여부 (Y/N)</td><td>Y</td></tr>
+        <tr><td><span class="code">SORT_SQ</span></td><td>DECIMAL(5,0)</td><td></td><td>정렬순번</td><td>1</td></tr>
+        <tr><td><span class="code">INSERT_DT / MODIFY_DT</span></td><td>DATETIME</td><td></td><td>등록/수정일시</td><td></td></tr>
+      </tbody>
+    </table></div>
+
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">AI_WITHREP_RISK_RULE</span> (
+  <span class="nm">RULE_CD</span>        <span class="kw">VARCHAR</span>(10)   <span class="op">NOT NULL</span>   <span class="cm">COMMENT 'AI 위험분석 규칙코드'</span>,
+  <span class="nm">RISK_CTGR_CD</span>  <span class="kw">VARCHAR</span>(10)   <span class="op">NOT NULL</span>   <span class="cm">COMMENT '구분 UNDER_REPT/DATA_MISS/DATA_DUPL/REFUND/YREND'</span>,
+  <span class="nm">RULE_NM</span>        <span class="kw">VARCHAR</span>(100)  <span class="op">NOT NULL</span>   <span class="cm">COMMENT '위험항목명'</span>,
+  <span class="nm">CHECK_STD_DC</span>  <span class="kw">TEXT</span>                       <span class="cm">COMMENT '점검기준 상세설명'</span>,
+  <span class="nm">GUIDE_MSG</span>      <span class="kw">VARCHAR</span>(500)               <span class="cm">COMMENT '사용자 안내문구 템플릿'</span>,
+  <span class="nm">REF_TABLE_NM</span>  <span class="kw">VARCHAR</span>(200)               <span class="cm">COMMENT '참조 테이블명 (콤마 구분)'</span>,
+  <span class="nm">REF_FIELD_NM</span>  <span class="kw">VARCHAR</span>(200)               <span class="cm">COMMENT '참조 필드명 (콤마 구분)'</span>,
+  <span class="nm">THRSHLD_RATE</span>  <span class="kw">DECIMAL</span>(5,2)               <span class="cm">COMMENT '임계율 (%)'</span>,
+  <span class="nm">THRSHLD_AMT</span>   <span class="kw">DECIMAL</span>(19,4)              <span class="cm">COMMENT '임계금액'</span>,
+  <span class="nm">ACTIVE_YN</span>     <span class="kw">VARCHAR</span>(1)  <span class="op">DEFAULT</span> <span class="str">'Y'</span>   <span class="cm">COMMENT '활성여부'</span>,
+  <span class="nm">SORT_SQ</span>       <span class="kw">DECIMAL</span>(5,0)               <span class="cm">COMMENT '정렬순번'</span>,
+  <span class="nm">INSERT_ID</span>     <span class="kw">VARCHAR</span>(10),  <span class="nm">INSERT_IP</span>  <span class="kw">VARCHAR</span>(15),  <span class="nm">INSERT_DT</span> <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_ID</span>     <span class="kw">VARCHAR</span>(10),  <span class="nm">MODIFY_IP</span>  <span class="kw">VARCHAR</span>(15),  <span class="nm">MODIFY_DT</span> <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (RULE_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'AI 원천징수이행상황신고서 위험분석 규칙'</span>;
+
+<span class="cm">-- 초기 데이터 (19개 위험항목)</span>
+<span class="kw">INSERT INTO</span> AI_WITHREP_RISK_RULE VALUES
+(<span class="str">'RISK_001'</span>, <span class="str">'UNDER_REPT'</span>, <span class="str">'소득세액 급감'</span>, <span class="str">'지급총액은 전월대비 10% 이내이나, 소득세액이 30% 이상 감소'</span>, <span class="str">'지급총액은 평소와 유사하나, 소득세액만 크게 감소했습니다. 비과세/감면 적용 여부를 확인하세요.'</span>, <span class="str">'HR_WITHREP_DTL,HR_WITHREP_MST'</span>, <span class="str">'PAY_TOT_AMT,INTAX_AMT,LSMTH_DOC_NO'</span>, 30.00, <span class="op">NULL</span>, <span class="str">'Y'</span>, 1, <span class="op">NULL</span>,<span class="op">NULL</span>,<span class="op">NOW</span>(),<span class="op">NULL</span>,<span class="op">NULL</span>,<span class="op">NOW</span>()),
+(<span class="str">'RISK_002'</span>, <span class="str">'UNDER_REPT'</span>, <span class="str">'신규입사자 급여 누락 의심'</span>, <span class="str">'신규입사자 수 × 평균급여 대비 총지급액 증가분이 50% 미만'</span>, <span class="str">'신규입사자가 발생했으나 총지급액이 전월과 유사한 수준입니다. 급여 반영 여부를 확인하시기 바랍니다.'</span>, <span class="str">'SEMP,HR_WITHREP_DTL'</span>, <span class="str">'JOIN_DT,PAY_TOT_AMT,NOPL_CNT'</span>, 50.00, <span class="op">NULL</span>, <span class="str">'Y'</span>, 2, <span class="op">NULL</span>,<span class="op">NULL</span>,<span class="op">NOW</span>(),<span class="op">NULL</span>,<span class="op">NULL</span>,<span class="op">NOW</span>()),
+(<span class="str">'RISK_011'</span>, <span class="str">'REFUND'</span>, <span class="str">'전월 이월환급세액 불일치'</span>, <span class="str">'전월 차월이월환급세액 ≠ 당월 전월미환급세액'</span>, <span class="str">'전월의 차월이월환급세액과 당월의 전월미환급세액이 일치하지 않습니다.'</span>, <span class="str">'HR_WITHREP_MST'</span>, <span class="str">'NEMOX_REFUTX_AMT,LMNREF_TAX_AMT,LSMTH_DOC_NO'</span>, <span class="op">NULL</span>, 0, <span class="str">'Y'</span>, 11, <span class="op">NULL</span>,<span class="op">NULL</span>,<span class="op">NOW</span>(),<span class="op">NULL</span>,<span class="op">NULL</span>,<span class="op">NOW</span>()),
+(<span class="str">'RISK_016'</span>, <span class="str">'YREND'</span>, <span class="str">'신고서 생성 후 연말정산 변경'</span>, <span class="str">'신고서 집계일시 < 연말정산 최종 수정일시'</span>, <span class="str">'신고서 불러오기 이후 연말정산 데이터가 변경되었습니다. 최신 내용 반영을 위해 신고서를 다시 집계하시기 바랍니다.'</span>, <span class="str">'HR_WITHREP_MST,HR_YREND_MST'</span>, <span class="str">'INSERT_DT,MODIFY_DT'</span>, <span class="op">NULL</span>, <span class="op">NULL</span>, <span class="str">'Y'</span>, 16, <span class="op">NULL</span>,<span class="op">NULL</span>,<span class="op">NOW</span>(),<span class="op">NULL</span>,<span class="op">NULL</span>,<span class="op">NOW</span>());
+<span class="cm">-- ... 나머지 15개 규칙도 동일 패턴으로 INSERT</span></pre>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">AI_WITHREP_RISK_RST — AI 위험분석 결과 테이블</div>
+    <div class="tw"><table>
+      <thead><tr><th>컬럼명</th><th>타입</th><th>Key</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td><span class="code">CO_CD</span></td><td>VARCHAR(4)</td><td><span class="badge b-pk">PK</span></td><td>회사코드</td></tr>
+        <tr><td><span class="code">DIV_CD</span></td><td>VARCHAR(4)</td><td><span class="badge b-pk">PK</span></td><td>사업장코드</td></tr>
+        <tr><td><span class="code">DOC_NO</span></td><td>VARCHAR(20)</td><td><span class="badge b-pk">PK</span> <span class="badge b-fk">FK</span></td><td>문서번호 → HR_WITHREP_MST</td></tr>
+        <tr><td><span class="code">RULE_CD</span></td><td>VARCHAR(10)</td><td><span class="badge b-pk">PK</span> <span class="badge b-fk">FK</span></td><td>규칙코드 → AI_WITHREP_RISK_RULE</td></tr>
+        <tr><td><span class="code">DETECT_YN</span></td><td>VARCHAR(1)</td><td></td><td>위험탐지여부 (Y/N)</td></tr>
+        <tr><td><span class="code">RISK_LVL_CD</span></td><td>VARCHAR(3)</td><td></td><td>위험등급 (H:높음 / M:중간 / L:낮음)</td></tr>
+        <tr><td><span class="code">ACTUAL_VAL</span></td><td>DECIMAL(19,4)</td><td></td><td>탐지된 실제값 (예: 실제 소득세액 차이율)</td></tr>
+        <tr><td><span class="code">EXPECTED_VAL</span></td><td>DECIMAL(19,4)</td><td></td><td>기대값 (예: 전월 소득세액 기준 기대치)</td></tr>
+        <tr><td><span class="code">DIFF_AMT</span></td><td>DECIMAL(19,4)</td><td></td><td>차이금액</td></tr>
+        <tr><td><span class="code">DIFF_RATE</span></td><td>DECIMAL(10,4)</td><td></td><td>차이율 (%)</td></tr>
+        <tr><td><span class="code">GUIDE_MSG</span></td><td>VARCHAR(500)</td><td></td><td>사용자에게 표시될 최종 안내문구</td></tr>
+        <tr><td><span class="code">REF_DATA_DC</span></td><td>TEXT</td><td></td><td>탐지 근거 상세 데이터 (JSON/텍스트)</td></tr>
+        <tr><td><span class="code">CNFRM_YN</span></td><td>VARCHAR(1)</td><td></td><td>사용자 확인여부 (Y: 확인완료, N: 미확인)</td></tr>
+        <tr><td><span class="code">CNFRM_ID</span></td><td>VARCHAR(10)</td><td></td><td>확인자 ID</td></tr>
+        <tr><td><span class="code">CNFRM_DT</span></td><td>DATETIME</td><td></td><td>확인일시</td></tr>
+        <tr><td><span class="code">CNFRM_REASON_DC</span></td><td>VARCHAR(500)</td><td></td><td>확인사유 (무시/수용/수정예정 등)</td></tr>
+        <tr><td><span class="code">ANLYZ_DT</span></td><td>DATETIME</td><td></td><td>AI 분석 실행일시</td></tr>
+        <tr><td><span class="code">INSERT_DT / MODIFY_DT</span></td><td>DATETIME</td><td></td><td>등록/수정일시</td></tr>
+      </tbody>
+    </table></div>
+
+    <pre><span class="kw">CREATE TABLE</span> <span class="fn">AI_WITHREP_RISK_RST</span> (
+  <span class="nm">CO_CD</span>          <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>   <span class="cm">COMMENT '회사코드'</span>,
+  <span class="nm">DIV_CD</span>         <span class="kw">VARCHAR</span>(4)    <span class="op">NOT NULL</span>   <span class="cm">COMMENT '사업장코드'</span>,
+  <span class="nm">DOC_NO</span>         <span class="kw">VARCHAR</span>(20)   <span class="op">NOT NULL</span>   <span class="cm">COMMENT '문서번호 (신고서 식별키)'</span>,
+  <span class="nm">RULE_CD</span>        <span class="kw">VARCHAR</span>(10)   <span class="op">NOT NULL</span>   <span class="cm">COMMENT 'AI 위험분석 규칙코드'</span>,
+  <span class="nm">DETECT_YN</span>     <span class="kw">VARCHAR</span>(1)   <span class="op">DEFAULT</span> <span class="str">'N'</span> <span class="cm">COMMENT '위험탐지여부'</span>,
+  <span class="nm">RISK_LVL_CD</span>   <span class="kw">VARCHAR</span>(3)                 <span class="cm">COMMENT '위험등급 H/M/L'</span>,
+  <span class="nm">ACTUAL_VAL</span>    <span class="kw">DECIMAL</span>(19,4)              <span class="cm">COMMENT '실제값'</span>,
+  <span class="nm">EXPECTED_VAL</span>  <span class="kw">DECIMAL</span>(19,4)              <span class="cm">COMMENT '기대값'</span>,
+  <span class="nm">DIFF_AMT</span>      <span class="kw">DECIMAL</span>(19,4)              <span class="cm">COMMENT '차이금액'</span>,
+  <span class="nm">DIFF_RATE</span>     <span class="kw">DECIMAL</span>(10,4)              <span class="cm">COMMENT '차이율(%)'</span>,
+  <span class="nm">GUIDE_MSG</span>     <span class="kw">VARCHAR</span>(500)               <span class="cm">COMMENT '사용자 안내문구 (최종)'</span>,
+  <span class="nm">REF_DATA_DC</span>   <span class="kw">TEXT</span>                       <span class="cm">COMMENT '탐지 근거 데이터'</span>,
+  <span class="nm">CNFRM_YN</span>      <span class="kw">VARCHAR</span>(1)   <span class="op">DEFAULT</span> <span class="str">'N'</span> <span class="cm">COMMENT '사용자 확인여부'</span>,
+  <span class="nm">CNFRM_ID</span>      <span class="kw">VARCHAR</span>(10)                <span class="cm">COMMENT '확인자 ID'</span>,
+  <span class="nm">CNFRM_DT</span>      <span class="kw">DATETIME</span>                   <span class="cm">COMMENT '확인일시'</span>,
+  <span class="nm">CNFRM_REASON_DC</span> <span class="kw">VARCHAR</span>(500)             <span class="cm">COMMENT '확인사유'</span>,
+  <span class="nm">ANLYZ_DT</span>      <span class="kw">DATETIME</span>                   <span class="cm">COMMENT 'AI 분석 실행일시'</span>,
+  <span class="nm">INSERT_DT</span>     <span class="kw">DATETIME</span>,
+  <span class="nm">MODIFY_DT</span>     <span class="kw">DATETIME</span>,
+  <span class="op">PRIMARY KEY</span> (CO_CD, DIV_CD, DOC_NO, RULE_CD),
+  <span class="op">CONSTRAINT</span> FK_RISK_RST_MST <span class="op">FOREIGN KEY</span> (CO_CD, DIV_CD, DOC_NO)
+    <span class="op">REFERENCES</span> HR_WITHREP_MST (CO_CD, DIV_CD, DOC_NO),
+  <span class="op">CONSTRAINT</span> FK_RISK_RST_RULE <span class="op">FOREIGN KEY</span> (RULE_CD)
+    <span class="op">REFERENCES</span> AI_WITHREP_RISK_RULE (RULE_CD)
+) ENGINE=InnoDB <span class="op">DEFAULT</span> CHARSET=utf8mb4 COMMENT=<span class="str">'AI 원천징수이행상황신고서 위험분석 결과'</span>;
+
+<span class="cm">-- 인덱스</span>
+<span class="kw">CREATE INDEX</span> IDX_RISK_RST_DETECT   <span class="op">ON</span> AI_WITHREP_RISK_RST (CO_CD, DIV_CD, DOC_NO, DETECT_YN);
+<span class="kw">CREATE INDEX</span> IDX_RISK_RST_CNFRM    <span class="op">ON</span> AI_WITHREP_RISK_RST (CO_CD, DIV_CD, DOC_NO, CNFRM_YN);
+<span class="kw">CREATE INDEX</span> IDX_RISK_RST_ANLYZ    <span class="op">ON</span> AI_WITHREP_RISK_RST (ANLYZ_DT);</pre>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">📊 AI 위험분석 데이터 흐름</div>
+    <div class="rel-diagram">
+      <div class="rel-title">▶ 신고서 제출 전 AI 위험분석 처리 흐름</div>
+      <div class="step-flow">
+        <div class="step-box" style="border-color:#6a1b9a">
+          <div class="step-num" style="color:#6a1b9a">STEP 1</div>
+          <div class="step-ttl">신고서 집계 완료</div>
+          <div class="step-desc">HR_WITHREP_MST / DTL 데이터 확정</div>
+        </div>
+        <div class="step-box" style="border-color:#6a1b9a">
+          <div class="step-num" style="color:#6a1b9a">STEP 2</div>
+          <div class="step-ttl">규칙 로드</div>
+          <div class="step-desc">AI_WITHREP_RISK_RULE에서 ACTIVE_YN='Y' 규칙 조회</div>
+        </div>
+        <div class="step-box" style="border-color:#6a1b9a">
+          <div class="step-num" style="color:#6a1b9a">STEP 3</div>
+          <div class="step-ttl">탐지 로직 실행</div>
+          <div class="step-desc">규칙별 참조테이블 조인 후 임계값 비교 → 탐지여부 판정</div>
+        </div>
+        <div class="step-box" style="border-color:#6a1b9a">
+          <div class="step-num" style="color:#6a1b9a">STEP 4</div>
+          <div class="step-ttl">결과 저장</div>
+          <div class="step-desc">AI_WITHREP_RISK_RST에 탐지결과·실제값·기대값·안내문구 저장</div>
+        </div>
+        <div class="step-box" style="border-color:#6a1b9a">
+          <div class="step-num" style="color:#6a1b9a">STEP 5</div>
+          <div class="step-ttl">사용자 확인</div>
+          <div class="step-desc">DETECT_YN='Y' 항목 화면 표시 → 사용자가 확인 후 CNFRM_YN='Y' 업데이트</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsec">
+    <div class="sub-title">🔍 주요 탐지 쿼리 예시</div>
+    <div class="sub-title2">① 소득세액 급감 탐지 (RISK_001)</div>
+    <pre><span class="cm">-- 소득세액 급감 탐지: 전월대비 INTAX_AMT 30% 이상 감소</span>
+<span class="kw">SELECT</span>
+  c.CO_CD, c.DIV_CD, c.DOC_NO,
+  <span class="str">'RISK_001'</span>            <span class="kw">AS</span> RULE_CD,
+  <span class="kw">CASE WHEN</span>
+    (p.INTAX_AMT - c.INTAX_AMT) / <span class="op">NULLIF</span>(p.INTAX_AMT, 0) * 100 >= 30
+    <span class="kw">AND</span> <span class="op">ABS</span>(c.PAY_TOT_AMT - p.PAY_TOT_AMT) / <span class="op">NULLIF</span>(p.PAY_TOT_AMT, 0) * 100 <= 10
+  <span class="kw">THEN</span> <span class="str">'Y'</span> <span class="kw">ELSE</span> <span class="str">'N'</span> <span class="kw">END</span>  <span class="kw">AS</span> DETECT_YN,
+  c.INTAX_AMT           <span class="kw">AS</span> ACTUAL_VAL,
+  p.INTAX_AMT           <span class="kw">AS</span> EXPECTED_VAL,
+  c.INTAX_AMT - p.INTAX_AMT <span class="kw">AS</span> DIFF_AMT,
+  (c.INTAX_AMT - p.INTAX_AMT) / <span class="op">NULLIF</span>(p.INTAX_AMT, 0) * 100 <span class="kw">AS</span> DIFF_RATE,
+  <span class="op">NOW</span>()                 <span class="kw">AS</span> ANLYZ_DT
+<span class="kw">FROM</span> HR_WITHREP_DTL c
+<span class="kw">JOIN</span> HR_WITHREP_MST  m  <span class="op">ON</span> m.CO_CD = c.CO_CD <span class="op">AND</span> m.DIV_CD = c.DIV_CD <span class="op">AND</span> m.DOC_NO = c.DOC_NO
+<span class="kw">JOIN</span> HR_WITHREP_DTL p  <span class="op">ON</span> p.CO_CD = m.CO_CD <span class="op">AND</span> p.DIV_CD = m.DIV_CD
+                         <span class="op">AND</span> p.DOC_NO = m.LSMTH_DOC_NO   <span class="cm">-- 전월 신고서</span>
+                         <span class="op">AND</span> p.SRC_LEV_FG_CD = c.SRC_LEV_FG_CD
+<span class="kw">WHERE</span> c.CO_CD = <span class="str">?</span> <span class="op">AND</span> c.DIV_CD = <span class="str">?</span> <span class="op">AND</span> c.DOC_NO = <span class="str">?</span>;</pre>
+
+    <div class="sub-title2">② 전월 이월환급세액 불일치 탐지 (RISK_011)</div>
+    <pre><span class="cm">-- 전월 NEMOX_REFUTX_AMT ≠ 당월 LMNREF_TAX_AMT</span>
+<span class="kw">SELECT</span>
+  cur.CO_CD, cur.DIV_CD, cur.DOC_NO,
+  <span class="str">'RISK_011'</span>            <span class="kw">AS</span> RULE_CD,
+  <span class="kw">CASE WHEN</span> pre.NEMOX_REFUTX_AMT != cur.LMNREF_TAX_AMT
+       <span class="kw">THEN</span> <span class="str">'Y'</span> <span class="kw">ELSE</span> <span class="str">'N'</span> <span class="kw">END</span>  <span class="kw">AS</span> DETECT_YN,
+  cur.LMNREF_TAX_AMT    <span class="kw">AS</span> ACTUAL_VAL,
+  pre.NEMOX_REFUTX_AMT  <span class="kw">AS</span> EXPECTED_VAL,
+  cur.LMNREF_TAX_AMT - pre.NEMOX_REFUTX_AMT  <span class="kw">AS</span> DIFF_AMT
+<span class="kw">FROM</span> HR_WITHREP_MST cur
+<span class="kw">JOIN</span> HR_WITHREP_MST pre <span class="op">ON</span> pre.CO_CD  = cur.CO_CD
+                          <span class="op">AND</span> pre.DIV_CD = cur.DIV_CD
+                          <span class="op">AND</span> pre.DOC_NO = cur.LSMTH_DOC_NO  <span class="cm">-- 전월 문서번호 연결</span>
+<span class="kw">WHERE</span> cur.CO_CD = <span class="str">?</span> <span class="op">AND</span> cur.DIV_CD = <span class="str">?</span> <span class="op">AND</span> cur.DOC_NO = <span class="str">?</span>;</pre>
+
+    <div class="sub-title2">③ 신고서 생성 후 연말정산 변경 탐지 (RISK_016)</div>
+    <pre><span class="cm">-- 신고서 생성일시(INSERT_DT) < 연말정산 수정일시(MODIFY_DT)</span>
+<span class="kw">SELECT</span>
+  m.CO_CD, m.DIV_CD, m.DOC_NO,
+  <span class="str">'RISK_016'</span>        <span class="kw">AS</span> RULE_CD,
+  <span class="kw">CASE WHEN</span> <span class="op">MAX</span>(y.MODIFY_DT) > m.INSERT_DT <span class="kw">THEN</span> <span class="str">'Y'</span> <span class="kw">ELSE</span> <span class="str">'N'</span> <span class="kw">END</span>  <span class="kw">AS</span> DETECT_YN,
+  <span class="op">UNIX_TIMESTAMP</span>(<span class="op">MAX</span>(y.MODIFY_DT)) <span class="kw">AS</span> ACTUAL_VAL,
+  <span class="op">UNIX_TIMESTAMP</span>(m.INSERT_DT)       <span class="kw">AS</span> EXPECTED_VAL
+<span class="kw">FROM</span> HR_WITHREP_MST m
+<span class="kw">JOIN</span> HR_YREND_MST   y <span class="op">ON</span> y.CO_CD = m.CO_CD <span class="op">AND</span> y.DIV_CD = m.DIV_CD
+<span class="kw">WHERE</span> m.CO_CD = <span class="str">?</span> <span class="op">AND</span> m.DIV_CD = <span class="str">?</span> <span class="op">AND</span> m.DOC_NO = <span class="str">?</span>
+  <span class="op">AND</span> m.YREND_YN = <span class="str">'Y'</span>
+<span class="kw">GROUP BY</span> m.CO_CD, m.DIV_CD, m.DOC_NO, m.INSERT_DT;</pre>
+  </div>
+</div>
+
+<script>
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>
